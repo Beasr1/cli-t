@@ -1,0 +1,369 @@
+CLI-T: Package Structure & Abstractions
+Package Structure
+cli-t/
+├── cmd/
+│   └── cli-t/
+│       └── main.go                    # Single entry point
+├── internal/
+│   ├── command/
+│   │   ├── registry.go                # Command registration
+│   │   ├── executor.go                # Command execution engine
+│   │   └── types.go                   # Command interfaces
+│   ├── tools/
+│   │   ├── wc/
+│   │   │   ├── wc.go                  # Tool implementation
+│   │   │   └── wc_test.go
+│   │   ├── json/
+│   │   │   ├── json.go
+│   │   │   ├── parser.go              # JSON parser
+│   │   │   ├── formatter.go           # JSON formatter
+│   │   │   └── json_test.go
+│   │   ├── redis/
+│   │   │   ├── server/
+│   │   │   │   ├── server.go
+│   │   │   │   ├── handler.go
+│   │   │   │   └── storage.go
+│   │   │   ├── client/
+│   │   │   │   └── client.go
+│   │   │   └── protocol/
+│   │   │       └── resp.go            # RESP protocol
+│   │   └── ...
+│   ├── shared/
+│   │   ├── io/                        # I/O helpers
+│   │   │   ├── reader.go
+│   │   │   ├── writer.go
+│   │   │   └── pipe.go
+│   │   ├── net/                       # Network helpers
+│   │   │   ├── server.go
+│   │   │   └── client.go
+│   │   ├── parse/                     # Parsing helpers
+│   │   │   ├── lexer.go
+│   │   │   └── parser.go
+│   │   └── algorithms/                # Shared algorithms
+│   │       ├── huffman.go
+│   │       ├── diff.go
+│   │       └── search.go
+│   └── config/
+│       ├── config.go                  # Global configuration
+│       └── flags.go                   # Common flags
+├── pkg/                               # Public APIs (if needed)
+│   └── cli-t/
+│       └── version.go
+└── test/
+    ├── integration/
+    ├── fixtures/
+    └── helpers/
+Core Abstractions
+1. Command Interface
+go// internal/command/types.go
+package command
+
+import (
+    "context"
+    "io"
+)
+
+// Command represents a CLI tool
+type Command interface {
+    // Metadata
+    Name() string
+    Usage() string
+    Description() string
+    
+    // Execution
+    Execute(ctx context.Context, args *Args) error
+    
+    // Validation
+    ValidateArgs(args []string) error
+}
+
+// Args encapsulates all command inputs/outputs
+type Args struct {
+    // Command line arguments
+    Positional []string
+    Flags      map[string]interface{}
+    
+    // I/O
+    Stdin  io.Reader
+    Stdout io.Writer
+    Stderr io.Writer
+    
+    // Environment
+    Env    map[string]string
+    Config *Config
+}
+
+// Config holds command-specific configuration
+type Config struct {
+    Verbose bool
+    Debug   bool
+    NoColor bool
+    // ... other common configs
+}
+2. Tool Implementation Pattern
+go// internal/tools/wc/wc.go
+package wc
+
+import (
+    "context"
+    "github.com/yourusername/cli-t/internal/command"
+)
+
+// Command implements the wc tool
+type Command struct {
+    // tool-specific fields
+    countLines bool
+    countWords bool
+    countBytes bool
+}
+
+// New creates a new wc command
+func New() command.Command {
+    return &Command{}
+}
+
+func (c *Command) Name() string        { return "wc" }
+func (c *Command) Usage() string       { return "wc [options] [file...]" }
+func (c *Command) Description() string { return "word, line, character, and byte count" }
+
+func (c *Command) ValidateArgs(args []string) error {
+    // Validation logic
+    return nil
+}
+
+func (c *Command) Execute(ctx context.Context, args *command.Args) error {
+    // Implementation
+    return nil
+}
+3. Server Abstraction (for network tools)
+go// internal/shared/net/server.go
+package net
+
+import (
+    "context"
+    "net"
+)
+
+// Server provides a common server abstraction
+type Server interface {
+    Start(ctx context.Context) error
+    Stop(ctx context.Context) error
+    Addr() net.Addr
+}
+
+// BaseServer provides common server functionality
+type BaseServer struct {
+    addr     string
+    listener net.Listener
+    // ... common fields
+}
+
+// Handler processes connections
+type Handler interface {
+    Handle(ctx context.Context, conn net.Conn) error
+}
+4. Parser Framework
+go// internal/shared/parse/parser.go
+package parse
+
+// Token represents a lexical token
+type Token struct {
+    Type  TokenType
+    Value string
+    Pos   Position
+}
+
+// TokenType identifies the type of token
+type TokenType int
+
+// Position in the input
+type Position struct {
+    Line   int
+    Column int
+    Offset int
+}
+
+// Lexer tokenizes input
+type Lexer interface {
+    Next() (Token, error)
+    Peek() (Token, error)
+}
+
+// Parser converts tokens to AST
+type Parser interface {
+    Parse(lexer Lexer) (interface{}, error)
+}
+5. I/O Abstractions
+go// internal/shared/io/reader.go
+package io
+
+import (
+    "bufio"
+    "io"
+)
+
+// LineReader reads input line by line
+type LineReader struct {
+    scanner *bufio.Scanner
+    reader  io.Reader
+}
+
+// ChunkReader reads input in chunks
+type ChunkReader struct {
+    reader    io.Reader
+    chunkSize int
+}
+
+// MultiReader combines multiple readers
+type MultiReader struct {
+    readers []io.Reader
+    current int
+}
+6. Registry Pattern
+go// internal/command/registry.go
+package command
+
+import (
+    "fmt"
+    "sync"
+)
+
+// Registry holds all available commands
+type Registry struct {
+    mu       sync.RWMutex
+    commands map[string]Command
+}
+
+// Global registry
+var defaultRegistry = &Registry{
+    commands: make(map[string]Command),
+}
+
+// Register adds a command to the registry
+func Register(cmd Command) error {
+    defaultRegistry.mu.Lock()
+    defer defaultRegistry.mu.Unlock()
+    
+    name := cmd.Name()
+    if _, exists := defaultRegistry.commands[name]; exists {
+        return fmt.Errorf("command %s already registered", name)
+    }
+    
+    defaultRegistry.commands[name] = cmd
+    return nil
+}
+
+// Get retrieves a command by name
+func Get(name string) (Command, bool) {
+    defaultRegistry.mu.RLock()
+    defer defaultRegistry.mu.RUnlock()
+    
+    cmd, ok := defaultRegistry.commands[name]
+    return cmd, ok
+}
+7. Testing Helpers
+go// test/helpers/command.go
+package helpers
+
+import (
+    "bytes"
+    "context"
+    "github.com/yourusername/cli-t/internal/command"
+)
+
+// TestArgs creates Args for testing
+func TestArgs(args ...string) *command.Args {
+    return &command.Args{
+        Positional: args,
+        Flags:      make(map[string]interface{}),
+        Stdin:      &bytes.Buffer{},
+        Stdout:     &bytes.Buffer{},
+        Stderr:     &bytes.Buffer{},
+        Env:        make(map[string]string),
+    }
+}
+
+// ExecuteCommand runs a command and captures output
+func ExecuteCommand(cmd command.Command, args ...string) (string, string, error) {
+    testArgs := TestArgs(args...)
+    err := cmd.Execute(context.Background(), testArgs)
+    
+    stdout := testArgs.Stdout.(*bytes.Buffer).String()
+    stderr := testArgs.Stderr.(*bytes.Buffer).String()
+    
+    return stdout, stderr, err
+}
+Usage Example
+Main Entry Point
+go// cmd/cli-t/main.go
+package main
+
+import (
+    "context"
+    "fmt"
+    "os"
+    
+    "github.com/yourusername/cli-t/internal/command"
+    _ "github.com/yourusername/cli-t/internal/tools" // Register all tools
+)
+
+func main() {
+    if len(os.Args) < 2 {
+        fmt.Fprintln(os.Stderr, "usage: cli-t <command> [args...]")
+        os.Exit(1)
+    }
+    
+    cmdName := os.Args[1]
+    cmd, ok := command.Get(cmdName)
+    if !ok {
+        fmt.Fprintf(os.Stderr, "unknown command: %s\n", cmdName)
+        os.Exit(1)
+    }
+    
+    args := &command.Args{
+        Positional: os.Args[2:],
+        Stdin:      os.Stdin,
+        Stdout:     os.Stdout,
+        Stderr:     os.Stderr,
+        Env:        envToMap(os.Environ()),
+    }
+    
+    ctx := context.Background()
+    if err := cmd.Execute(ctx, args); err != nil {
+        fmt.Fprintf(os.Stderr, "error: %v\n", err)
+        os.Exit(1)
+    }
+}
+Tool Registration
+go// internal/tools/init.go
+package tools
+
+import (
+    "github.com/yourusername/cli-t/internal/command"
+    "github.com/yourusername/cli-t/internal/tools/wc"
+    "github.com/yourusername/cli-t/internal/tools/json"
+    // ... other tools
+)
+
+func init() {
+    // Register all tools
+    command.Register(wc.New())
+    command.Register(json.New())
+    // ... register other tools
+}
+Key Design Principles
+
+Single Responsibility: Each package has one clear purpose
+Dependency Injection: Tools receive dependencies through Args
+Interface Segregation: Small, focused interfaces
+Testability: All components can be tested in isolation
+Extensibility: New tools can be added without modifying core
+Consistency: All tools follow the same patterns
+
+This structure provides:
+
+Clear separation of concerns
+Easy testing and mocking
+Consistent patterns across all tools
+Flexibility to add new tools
+Shared functionality without tight coupling
