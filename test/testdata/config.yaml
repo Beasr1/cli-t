@@ -1,0 +1,51 @@
+# test/testdata/config.yaml
+# Test configuration file for unit tests
+
+version: "1"
+
+global:
+  theme: test-theme
+  output_format: json
+  color: never
+  editor: /usr/bin/test-editor
+  pager: test-pager
+  shell: /bin/test-shell
+
+ui:
+  show_hints: false
+  show_icons: false
+  progress_style: dots
+  table_style: ascii
+  time_format: iso8601
+
+tools:
+  wc:
+    default_flags: ["-l"]
+    max_file_size: 1048576
+    
+  grep:
+    default_flags: ["--color=never"]
+    case_sensitive: false
+    max_matches: 100
+    
+  json:
+    indent: 4
+    sort_keys: true
+    validate_on_parse: true
+    
+  test-tool:
+    enabled: true
+    timeout: 30s
+    retry_count: 3
+
+aliases:
+  t: test-tool
+  g: grep
+  j: json
+  w: wc
+  ll: "ls -la"
+
+hooks:
+  pre_execute: test/hooks/pre.sh
+  post_execute: test/hooks/post.sh
+  on_error: test/hooks/error.sh
