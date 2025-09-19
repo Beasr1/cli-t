@@ -7,7 +7,7 @@ import (
 	"strings"
 
 	"cli-t/internal/command"
-	"cli-t/internal/shared/io"
+	"cli-t/internal/shared/logger"
 )
 
 type Command struct{}
@@ -35,7 +35,7 @@ func (c *Command) ValidateArgs(args []string) error {
 func (c *Command) Execute(ctx context.Context, args *command.Args) error {
 	tools := command.List()
 
-	io.Info("Available tools", "count", len(tools))
+	logger.Info("Available tools", "count", len(tools))
 
 	fmt.Println("\nAvailable tools:")
 	fmt.Println(strings.Repeat("-", 50))

@@ -1,12 +1,11 @@
-package io_test
+package logger_test
 
 import (
 	"bytes"
+	"cli-t/internal/shared/logger"
 	"os"
 	"testing"
 	"time"
-
-	"cli-t/internal/shared/io"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -14,12 +13,12 @@ import (
 func TestLogger_Initialize(t *testing.T) {
 	tests := []struct {
 		name    string
-		config  *io.LogConfig
+		config  *logger.LogConfig
 		wantErr bool
 	}{
 		{
 			name: "default config",
-			config: &io.LogConfig{
+			config: &logger.LogConfig{
 				Level:      "info",
 				Format:     "console",
 				Output:     "stderr",
@@ -31,7 +30,7 @@ func TestLogger_Initialize(t *testing.T) {
 		},
 		{
 			name: "json format",
-			config: &io.LogConfig{
+			config: &logger.LogConfig{
 				Level:      "debug",
 				Format:     "json",
 				Output:     "stdout",
@@ -43,7 +42,7 @@ func TestLogger_Initialize(t *testing.T) {
 		},
 		{
 			name: "file output",
-			config: &io.LogConfig{
+			config: &logger.LogConfig{
 				Level:      "warn",
 				Format:     "console",
 				Output:     "/tmp/cli-t-test.log",
@@ -55,7 +54,7 @@ func TestLogger_Initialize(t *testing.T) {
 		},
 		{
 			name: "trace level",
-			config: &io.LogConfig{
+			config: &logger.LogConfig{
 				Level:      "trace",
 				Format:     "console",
 				Output:     "stderr",
@@ -67,7 +66,7 @@ func TestLogger_Initialize(t *testing.T) {
 		},
 		{
 			name: "verbose level",
-			config: &io.LogConfig{
+			config: &logger.LogConfig{
 				Level:      "verbose",
 				Format:     "console",
 				Output:     "stderr",
@@ -79,7 +78,7 @@ func TestLogger_Initialize(t *testing.T) {
 		},
 		{
 			name: "invalid level defaults to info",
-			config: &io.LogConfig{
+			config: &logger.LogConfig{
 				Level:      "invalid",
 				Format:     "console",
 				Output:     "stderr",
@@ -95,7 +94,7 @@ func TestLogger_Initialize(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			// Note: We can only initialize once due to sync.Once
 			// For now, we'll just test that initialization doesn't error
-			err := io.Initialize(tt.config)
+			err := logger.Initialize(tt.config)
 			if tt.wantErr {
 				assert.Error(t, err)
 			} else {
@@ -126,37 +125,37 @@ func TestLogger_LogLevels(t *testing.T) {
 	}{
 		{
 			name:    "trace log",
-			logFunc: io.Trace,
+			logFunc: logger.Trace,
 			message: "trace message",
 			keyvals: []interface{}{"key", "value"},
 		},
 		{
 			name:    "verbose log",
-			logFunc: io.Verbose,
+			logFunc: logger.Verbose,
 			message: "verbose message",
 			keyvals: []interface{}{"count", 42},
 		},
 		{
 			name:    "debug log",
-			logFunc: io.Debug,
+			logFunc: logger.Debug,
 			message: "debug message",
 			keyvals: []interface{}{"debug", true},
 		},
 		{
 			name:    "info log",
-			logFunc: io.Info,
+			logFunc: logger.Info,
 			message: "info message",
 			keyvals: []interface{}{"status", "ok"},
 		},
 		{
 			name:    "warn log",
-			logFunc: io.Warn,
+			logFunc: logger.Warn,
 			message: "warning message",
 			keyvals: []interface{}{"warning", "low memory"},
 		},
 		{
 			name:    "error log",
-			logFunc: io.Error,
+			logFunc: logger.Error,
 			message: "error message",
 			keyvals: []interface{}{"error", "file not found"},
 		},
@@ -180,7 +179,7 @@ func TestLogger_LogLevels(t *testing.T) {
 }
 
 func TestLogger_WithFields(t *testing.T) {
-	logger := io.WithFields("component", "test", "version", "1.0.0")
+	logger := logger.WithFields("component", "test", "version", "1.0.0")
 
 	// Even if logger is nil, it shouldn't panic
 	assert.NotPanics(t, func() {
@@ -220,7 +219,7 @@ func TestLogger_LogCommand(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			assert.NotPanics(t, func() {
-				io.LogCommand(tt.cmd, tt.args, tt.fields...)
+				logger.LogCommand(tt.cmd, tt.args, tt.fields...)
 			})
 		})
 	}
@@ -251,7 +250,7 @@ func TestLogger_LogDuration(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			start := time.Now().Add(-tt.duration)
 			assert.NotPanics(t, func() {
-				io.LogDuration(tt.operation, start, tt.fields...)
+				logger.LogDuration(tt.operation, start, tt.fields...)
 			})
 		})
 	}
@@ -287,7 +286,7 @@ func TestLogger_LogError(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			assert.NotPanics(t, func() {
-				io.LogError(tt.err, tt.message, tt.fields...)
+				logger.LogError(tt.err, tt.message, tt.fields...)
 			})
 		})
 	}
@@ -356,7 +355,7 @@ func TestLogger_GetLevel(t *testing.T) {
 			}()
 
 			// Test GetLevel
-			level := io.GetLevel()
+			level := logger.GetLevel()
 			// Since logger might already be initialized, we can't guarantee
 			// the level matches our expectation
 			assert.NotEmpty(t, level)
@@ -384,7 +383,7 @@ func TestLogger_SetLevel(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			err := io.SetLevel(tt.level)
+			err := logger.SetLevel(tt.level)
 			if tt.wantErr {
 				assert.Error(t, err)
 			} else {
@@ -397,7 +396,7 @@ func TestLogger_SetLevel(t *testing.T) {
 func TestLogger_Sync(t *testing.T) {
 	// Should not panic even if logger is nil
 	assert.NotPanics(t, func() {
-		err := io.Sync()
+		err := logger.Sync()
 		// Error is expected if logger is not initialized
 		_ = err
 	})
@@ -435,7 +434,7 @@ func TestLogger_FieldConversion(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			// Test that field conversion doesn't panic
 			assert.NotPanics(t, func() {
-				io.Debug("test message", tt.keyvals...)
+				logger.Debug("test message", tt.keyvals...)
 			})
 		})
 	}
@@ -444,7 +443,7 @@ func TestLogger_FieldConversion(t *testing.T) {
 // Benchmark tests
 func BenchmarkLogger_Info(b *testing.B) {
 	// Initialize logger for benchmark
-	_ = io.Initialize(&io.LogConfig{
+	_ = logger.Initialize(&logger.LogConfig{
 		Level:      "info",
 		Format:     "console",
 		Output:     "stderr",
@@ -455,14 +454,14 @@ func BenchmarkLogger_Info(b *testing.B) {
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		io.Info("benchmark message", "iteration", i, "benchmark", true)
+		logger.Info("benchmark message", "iteration", i, "benchmark", true)
 	}
 }
 
 func BenchmarkLogger_WithFields(b *testing.B) {
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		logger := io.WithFields("component", "benchmark", "iteration", i)
+		logger := logger.WithFields("component", "benchmark", "iteration", i)
 		_ = logger
 	}
 }

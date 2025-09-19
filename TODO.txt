@@ -1,3 +1,16 @@
+// TODO: Replace fmt.Printf with output package if we need:
+//       - JSON/YAML output formats (--output json)
+//       - Colored output with toggles
+//       - Consistent error formatting
+//       - Table formatting for structured data
+
+
+
+
+
+
+
+
 CLI-T: Package Structure & Abstractions
 Package Structure
 cli-t/

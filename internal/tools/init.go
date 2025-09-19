@@ -2,11 +2,12 @@ package tools
 
 import (
 	"cli-t/internal/command"
-	"cli-t/internal/shared/io"
+	"cli-t/internal/shared/logger"
 	"cli-t/internal/tools/config"
 	"cli-t/internal/tools/echo"
 	"cli-t/internal/tools/list"
 	versioncmd "cli-t/internal/tools/version"
+	"cli-t/internal/tools/wc"
 	"fmt"
 )
 
@@ -23,6 +24,7 @@ func init() {
 		versioncmd.New(),
 
 		echo.New(),
+		wc.New(),
 	}
 
 	// Register each tool
@@ -49,7 +51,7 @@ func RegisterAll() error {
 		versioncmd.New(),
 
 		echo.New(),
-		// wc.New(),
+		wc.New(),
 		// grep.New(),
 		// cat.New(),
 		// Add more tools here as you create them
@@ -58,14 +60,14 @@ func RegisterAll() error {
 	// Register each tool
 	for _, tool := range tools {
 		if err := command.Register(tool); err != nil {
-			io.Error("Failed to register tool",
+			logger.Error("Failed to register tool",
 				"tool", tool.Name(),
 				"error", err)
 			return err
 		}
-		io.Debug("Registered tool", "tool", tool.Name())
+		logger.Debug("Registered tool", "tool", tool.Name())
 	}
 
-	io.Info("All tools registered", "count", len(tools))
+	logger.Info("All tools registered", "count", len(tools))
 	return nil
 }

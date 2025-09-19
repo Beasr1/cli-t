@@ -8,7 +8,7 @@ import (
 
 	"cli-t/internal/command"
 	"cli-t/internal/config"
-	"cli-t/internal/shared/io"
+	"cli-t/internal/shared/logger"
 	_ "cli-t/internal/tools" // Register tools
 	"cli-t/pkg/version"
 
@@ -39,7 +39,7 @@ Get everything from wc to redis-server in a single binary.`,
 			level := determineLogLevel()
 
 			// Initialize logger
-			logConfig := &io.LogConfig{
+			logConfig := &logger.LogConfig{
 				Level:      level,
 				Format:     "console", // Could add --log-format flag later
 				Output:     "stderr",
@@ -53,12 +53,12 @@ Get everything from wc to redis-server in a single binary.`,
 				logConfig.Output = logFile
 			}
 
-			if err := io.Initialize(logConfig); err != nil {
+			if err := logger.Initialize(logConfig); err != nil {
 				return fmt.Errorf("failed to initialize logger: %w", err)
 			}
 
 			// Log startup info
-			io.Debug("CLI-T starting",
+			logger.Debug("CLI-T starting",
 				"version", version.Version,
 				"command", cmd.Name(),
 				"args", args,
@@ -67,7 +67,7 @@ Get everything from wc to redis-server in a single binary.`,
 
 			// Load configuration
 			if _, err := config.Load(); err != nil {
-				io.Warn("Failed to load config", "error", err)
+				logger.Warn("Failed to load config", "error", err)
 				// Don't fail, just use defaults
 			}
 
@@ -75,7 +75,7 @@ Get everything from wc to redis-server in a single binary.`,
 		},
 		PersistentPostRun: func(cmd *cobra.Command, args []string) {
 			// Ensure logs are flushed
-			io.Sync()
+			logger.Sync()
 		},
 	}
 
@@ -99,7 +99,7 @@ Get everything from wc to redis-server in a single binary.`,
 
 	// Execute
 	if err := rootCmd.Execute(); err != nil {
-		io.Error("Command failed", "error", err)
+		logger.Error("Command failed", "error", err)
 		os.Exit(1)
 	}
 }
@@ -143,7 +143,7 @@ func createSubcommand(name string, cmd command.Command) *cobra.Command {
 		RunE: func(cobraCmd *cobra.Command, args []string) error {
 			// Log command execution
 			start := time.Now()
-			io.LogCommand(name, args)
+			logger.LogCommand(name, args)
 
 			// Create command args
 			cmdArgs := &command.Args{
@@ -168,7 +168,7 @@ func createSubcommand(name string, cmd command.Command) *cobra.Command {
 			err := cmd.Execute(cobraCmd.Context(), cmdArgs)
 
 			// Log completion
-			io.LogDuration(name, start, "success", err == nil)
+			logger.LogDuration(name, start, "success", err == nil)
 
 			return err
 		},
