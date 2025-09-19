@@ -1,7 +1,6 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
 	"os"
 	"strings"
@@ -30,9 +29,10 @@ var (
 func main() {
 	rootCmd := &cobra.Command{
 		Use:   "cli-t",
-		Short: "The Developer's Swiss Army Knife",
-		Long: `CLI-T consolidates essential developer tools into one powerful, customizable CLI.
-No more installing dozens of tools - get everything from wc to redis-server in a single binary.`,
+		Short: "The Developer's only Obtainable cli-t",
+		Long: `
+CLI-T consolidates essential developer tools into one powerful, customizable CLI.
+Get everything from wc to redis-server in a single binary.`,
 		Version: version.String(),
 		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
 			// Determine log level from flags
@@ -97,11 +97,6 @@ No more installing dozens of tools - get everything from wc to redis-server in a
 		rootCmd.AddCommand(createSubcommand(name, cmd))
 	}
 
-	// Add built-in commands
-	rootCmd.AddCommand(createConfigCommand())
-	rootCmd.AddCommand(createListCommand())
-	rootCmd.AddCommand(createVersionCommand())
-
 	// Execute
 	if err := rootCmd.Execute(); err != nil {
 		io.Error("Command failed", "error", err)
@@ -140,10 +135,10 @@ func determineLogLevel() string {
 }
 
 func createSubcommand(name string, cmd command.Command) *cobra.Command {
-	return &cobra.Command{
+	cobraCmd := &cobra.Command{
 		Use:   name + " " + cmd.Usage(),
 		Short: cmd.Description(),
-		Long:  cmd.Description(), // Could be enhanced with long descriptions
+		Long:  cmd.Description(),
 		Args:  cobra.ArbitraryArgs,
 		RunE: func(cobraCmd *cobra.Command, args []string) error {
 			// Log command execution
@@ -166,7 +161,8 @@ func createSubcommand(name string, cmd command.Command) *cobra.Command {
 				},
 			}
 
-			// TODO: Parse command-specific flags from cobraCmd
+			// Parse flags
+			cmdArgs.Flags = command.ParseFlags(cobraCmd)
 
 			// Execute command
 			err := cmd.Execute(cobraCmd.Context(), cmdArgs)
@@ -177,99 +173,16 @@ func createSubcommand(name string, cmd command.Command) *cobra.Command {
 			return err
 		},
 	}
-}
 
-func createConfigCommand() *cobra.Command {
-	cmd := &cobra.Command{
-		Use:   "config",
-		Short: "Manage CLI-T configuration",
-		Long:  "View and edit CLI-T configuration settings",
+	// If command defines flags, add them
+	// Checks if cmd has defination of FlagDefiner. extract only that
+	// Lets not force Command to implement FlagDefiner types
+	if flagDefiner, ok := cmd.(command.FlagDefiner); ok {
+		flags := flagDefiner.DefineFlags()
+		command.SetupFlags(cobraCmd, flags)
 	}
 
-	// Subcommands
-	cmd.AddCommand(&cobra.Command{
-		Use:   "show",
-		Short: "Show current configuration",
-		RunE: func(cmd *cobra.Command, args []string) error {
-			cfg, err := config.Load()
-			if err != nil {
-				return err
-			}
-
-			// TODO: Pretty print config
-			fmt.Printf("%+v\n", cfg)
-			return nil
-		},
-	})
-
-	cmd.AddCommand(&cobra.Command{
-		Use:   "edit",
-		Short: "Edit configuration file",
-		RunE: func(cmd *cobra.Command, args []string) error {
-			// TODO: Open config in editor
-			return fmt.Errorf("not implemented yet")
-		},
-	})
-
-	return cmd
-}
-
-func createListCommand() *cobra.Command {
-	return &cobra.Command{
-		Use:   "list",
-		Short: "List available tools",
-		Long:  "Display all available CLI-T tools",
-		Run: func(cmd *cobra.Command, args []string) {
-			tools := command.List()
-
-			io.Info("Available tools", "count", len(tools))
-
-			fmt.Println("\nAvailable tools:")
-			fmt.Println(strings.Repeat("-", 50))
-
-			for _, name := range tools {
-				if cmd, ok := command.Get(name); ok {
-					fmt.Printf("  %-15s %s\n", name, cmd.Description())
-				}
-			}
-
-			fmt.Printf("\nTotal: %d tools\n", len(tools))
-			fmt.Println("\nUse 'cli-t <tool> --help' for tool-specific help")
-		},
-	}
-}
-
-func createVersionCommand() *cobra.Command {
-	var (
-		short   bool
-		jsonOut bool
-	)
-
-	cmd := &cobra.Command{
-		Use:   "version",
-		Short: "Show version information",
-		Long:  "Display detailed version information about CLI-T",
-		Run: func(cmd *cobra.Command, args []string) {
-			if short {
-				fmt.Println(version.Version)
-				return
-			}
-
-			if jsonOut {
-				data, _ := json.MarshalIndent(version.GetInfo(), "", "  ")
-				fmt.Println(string(data))
-				return
-			}
-
-			// Default detailed output
-			fmt.Println(version.DetailedString())
-		},
-	}
-
-	cmd.Flags().BoolVarP(&short, "short", "s", false, "Show version number only")
-	cmd.Flags().BoolVar(&jsonOut, "json", false, "Output version info as JSON")
-
-	return cmd
+	return cobraCmd
 }
 
 func envToMap(env []string) map[string]string {
