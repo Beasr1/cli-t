@@ -5,6 +5,7 @@ import (
 	"cli-t/internal/shared/logger"
 	"cli-t/internal/tools/config"
 	"cli-t/internal/tools/echo"
+	"cli-t/internal/tools/json"
 	"cli-t/internal/tools/list"
 	versioncmd "cli-t/internal/tools/version"
 	"cli-t/internal/tools/wc"
@@ -25,6 +26,7 @@ func init() {
 
 		echo.New(),
 		wc.New(),
+		json.New(),
 	}
 
 	// Register each tool
@@ -52,6 +54,7 @@ func RegisterAll() error {
 
 		echo.New(),
 		wc.New(),
+		json.New(),
 		// grep.New(),
 		// cat.New(),
 		// Add more tools here as you create them
