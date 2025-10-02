@@ -1,5 +1,7 @@
 package huffman
 
+import "strings"
+
 type HuffmanNode struct {
 	character rune // if nil => non-leaf
 	frequency int
@@ -63,4 +65,29 @@ func (ht *HuffmanTree) GenerateCodes() map[rune]string {
 	traverse(ht.rootNode, "", codes)
 
 	return codes
+}
+
+func (ht *HuffmanTree) Decode(bitString string) string {
+	if ht == nil || ht.rootNode == nil {
+		return ""
+	}
+
+	var result strings.Builder
+	current := ht.rootNode
+
+	for _, bit := range bitString {
+		if bit == '0' {
+			current = current.left
+		} else {
+			current = current.right
+		}
+
+		// If we reached a leaf node
+		if current.isLeaf {
+			result.WriteRune(current.character)
+			current = ht.rootNode // Reset to root
+		}
+	}
+
+	return result.String()
 }
