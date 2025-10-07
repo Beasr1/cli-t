@@ -45,7 +45,7 @@ func deserializeCompressed(data []byte) (CompressedHeader, []byte, error) {
 	header := CompressedHeader{}
 
 	// Read magic number
-	magic := make([]byte, 4)
+	magic := make([]byte, len(MAGIC_STRING))
 	buf.Read(magic)
 	if string(magic) != MAGIC_STRING {
 		return header, nil, fmt.Errorf("invalid file format")

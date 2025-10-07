@@ -61,16 +61,20 @@ func serializeCompressed(header CompressedHeader, data []byte) ([]byte, error) {
 	buf := new(bytes.Buffer)
 
 	// Write magic number (for file identification)
+	// for "HUFF_ATMKBFG" = 12 bytes
 	magic := []byte(MAGIC_STRING)
 	buf.Write(magic)
 
-	// Write original size
+	// Write original size (1 int32) = 4 bytes
 	binary.Write(buf, binary.LittleEndian, header.OriginalSize)
 
-	// Write padding
+	// Write padding 0 to 7 = 1 byte
 	buf.WriteByte(header.Padding)
 
 	// Write frequency table size
+	// can list all characters for simplicity but lets have flexiblity (0 to all characters) = 2 bytes
+	// uint8 might miss some edge case that is unicode support (thousands)
+	// 1 byte is not worth the risk of breaking on edge cases
 	binary.Write(buf, binary.LittleEndian, header.FreqTableSize)
 
 	// Write frequency table

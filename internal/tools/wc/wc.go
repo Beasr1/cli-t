@@ -3,8 +3,10 @@ package wc
 import (
 	"cli-t/internal/command"
 	"cli-t/internal/shared/file"
+	"cli-t/internal/shared/logger"
 	"context"
 	"fmt"
+	"io"
 	"strings"
 )
 
@@ -19,7 +21,7 @@ func (c *Command) Name() string {
 }
 
 func (c *Command) Usage() string {
-	return "[--byte|-c] [--line|-l] [--word|-w] [--char|-m]"
+	return "[--byte|-c] [--line|-l] [--word|-w] [--char|-m] [file]"
 }
 
 func (c *Command) Description() string {
@@ -27,7 +29,10 @@ func (c *Command) Description() string {
 }
 
 func (c *Command) ValidateArgs(args []string) error {
-	// No validation needed - flags are optional
+	// Accept 0 or 1 file
+	if len(args) > 1 {
+		return fmt.Errorf("too many arguments, expected 0 or 1 file")
+	}
 	return nil
 }
 
@@ -65,58 +70,93 @@ func (c *Command) DefineFlags() []command.Flag {
 }
 
 func (c *Command) Execute(ctx context.Context, args *command.Args) error {
-	// Ensure at least one positional argument is provided (the file path)
-	if len(args.Positional) < 1 {
-		return fmt.Errorf("file path is required")
+	// Parse flags
+	showBytes, showLines, showWords, showChars := c.parseFlags(args.Flags)
+
+	logger.Debug("WC configuration",
+		"bytes", showBytes,
+		"lines", showLines,
+		"words", showWords,
+		"chars", showChars,
+	)
+
+	// Read input
+	content, err := c.readInput(args)
+	if err != nil {
+		return err
 	}
 
-	// First positional argument is treated as the file path
-	filePath := args.Positional[0]
+	// Display counts
+	return c.displayCounts(content, showBytes, showLines, showWords, showChars, args.Stdout)
+}
 
+// parseFlags extracts flag values
+func (c *Command) parseFlags(flags map[string]interface{}) (showBytes, showLines, showWords, showChars bool) {
 	// --- Parse CLI Flags (these may or may not be present) ---
 
 	// Type assert flags to bool; will be 'false' if unset or type mismatch
 	// Note: if user does not pass a flag, the value may be nil, hence the safe '_'
-	showBytes, _ := args.Flags["byte"].(bool)
-	showLines, _ := args.Flags["line"].(bool)
-	showWords, _ := args.Flags["word"].(bool)
-	showChars, _ := args.Flags["char"].(bool)
+	showBytes, _ = flags["byte"].(bool)
+	showLines, _ = flags["line"].(bool)
+	showWords, _ = flags["word"].(bool)
+	showChars, _ = flags["char"].(bool)
 
-	// If no specific flag is passed, show all counts by default (like Unix `wc`)
+	// If no specific flag is passed, show all counts by default
 	if !showBytes && !showLines && !showWords && !showChars {
 		showBytes, showLines, showWords, showChars = true, true, true, true
 	}
 
-	// --- File Reading ---
+	return
+}
 
-	// Read the full content of the file as a string
-	content, err := file.ReadContent(filePath)
-	if err != nil {
-		return fmt.Errorf("failed to read file: %w", err)
+// readInput reads from stdin or file
+func (c *Command) readInput(args *command.Args) (string, error) {
+	// Ensure at least one positional argument is provided (the file path)
+	if len(args.Positional) == 0 {
+		// Read from stdin
+		logger.Verbose("Reading from stdin")
+		content, err := file.ReadFrom(args.Stdin)
+		if err != nil {
+			return "", fmt.Errorf("error reading from stdin: %w", err)
+		}
+		return content, nil
 	}
 
-	// --- Perform and Display Requested Counts ---
+	// Read from file
+	filePath := args.Positional[0]
+	logger.Verbose("Reading from file", "path", filePath)
+	content, err := file.ReadContent(filePath)
+	if err != nil {
+		return "", fmt.Errorf("error reading file %s: %w", filePath, err)
+	}
+	return content, nil
+}
 
+// displayCounts performs counting and outputs results
+func (c *Command) displayCounts(content string, showBytes, showLines, showWords, showChars bool, stdout io.Writer) error {
 	// Show line count
 	if showLines {
-		fmt.Printf("Lines: %d\n", len(strings.Split(strings.TrimSuffix(content, "\n"), "\n")))
+		lineCount := len(strings.Split(strings.TrimSuffix(content, "\n"), "\n"))
+		fmt.Fprintf(stdout, "Lines: %d\n", lineCount)
 	}
 
 	// Show word count
 	if showWords {
-		fmt.Printf("Words: %d\n", len(strings.Fields(content)))
+		wordCount := len(strings.Fields(content))
+		fmt.Fprintf(stdout, "Words: %d\n", wordCount)
 	}
 
-	// Show byte count (number of bytes in the raw file)
+	// Show byte count
 	if showBytes {
-		fmt.Printf("Bytes: %d\n", len([]byte(content)))
+		byteCount := len([]byte(content))
+		fmt.Fprintf(stdout, "Bytes: %d\n", byteCount)
 	}
 
-	// Show character count (based on Unicode runes)
+	// Show character count
 	if showChars {
-		fmt.Printf("Characters: %d\n", len([]rune(content)))
+		charCount := len([]rune(content))
+		fmt.Fprintf(stdout, "Characters: %d\n", charCount)
 	}
 
-	// Command completed successfully
 	return nil
 }
