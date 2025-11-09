@@ -129,6 +129,7 @@ func initializeLogger(cfg *LogConfig) error {
 	}
 
 	// Create core
+	// create each core for different file output : file or stderr, network
 	core := zapcore.NewCore(encoder, output, level)
 
 	// Build logger with options
@@ -143,7 +144,8 @@ func initializeLogger(cfg *LogConfig) error {
 	// Add custom level support
 	core = zapcore.NewTee(
 		core,
-		&customCore{Core: core},
+		// &customCore{Core: core}, // commmenting the bug for future ref
+		// delete later : issue was duplicate logs
 	)
 
 	Logger = zap.New(core, opts...)

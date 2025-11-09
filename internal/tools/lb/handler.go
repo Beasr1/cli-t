@@ -5,63 +5,63 @@ import (
 	"cli-t/internal/shared/logger"
 	"fmt"
 	"net/http"
-	"net/http/httputil"
-	"net/url"
-	"strings"
+	"sync"
 )
 
 // Handler handles incoming HTTP requests and forwards them to backend servers
 type Handler struct {
 	// Future: backend pool, algorithm, health checker
-	backend string
-	proxy   *httputil.ReverseProxy
+	backends     []*Backend
+	currentIndex int
+	mu           sync.Mutex
 }
 
 // NewHandler creates a new load balancer handler
-func NewHandler(backendURL string) (*Handler, error) {
-	// Parse URL
-	targetURL, err := url.Parse(backendURL)
-	if err != nil {
-		return nil, fmt.Errorf("invalid backend URL: %w", err)
-	}
+func NewHandler(backendURLs []string) (*Handler, error) {
+	backends := make([]*Backend, 0, len(backendURLs))
 
-	// Validate scheme (url.Parse doesn't error on missing scheme!)
-	if targetURL.Scheme != "http" && targetURL.Scheme != "https" {
-		return nil, fmt.Errorf("backend URL must start with http:// or https://")
-	}
+	logger.Info("backend", "urls", backendURLs)
 
-	// Also check if host is present
-	if targetURL.Host == "" {
-		return nil, fmt.Errorf("backend URL must include host")
+	for _, url := range backendURLs {
+		backend, err := NewBackend(url)
+		if err != nil {
+			return nil, fmt.Errorf("invalid backend %s: %w", url, err)
+		}
+		backends = append(backends, backend)
 	}
-
-	// Create proxy
-	proxy := httputil.NewSingleHostReverseProxy(targetURL)
 
 	return &Handler{
-		backend: backendURL,
-		proxy:   proxy,
+		backends:     backends,
+		currentIndex: 0,
 	}, nil
 }
 
 // ServeHTTP implements http.Handler interface
 func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	// Get next backend using round robin
+	backend := h.nextBackend()
+
 	// Log request details
-	logger.Info("Received request", "from", r.RemoteAddr)
-	logger.Info("Request details",
-		"method", r.Method,
+	logger.Info("Forwarding request",
+		"from", r.RemoteAddr,
+		"to", backend.URL,
 		"path", r.URL.Path,
+		"method", r.Method,
 		"protocol", r.Proto,
 	)
 
-	// Log headers
-	for key, values := range r.Header {
-		logger.Info("Header", "name", key, "value", strings.Join(values, ", "))
-	}
+	backend.Proxy.ServeHTTP(w, r)
+}
 
-	// w.WriteHeader(http.StatusOK)
-	// w.Write([]byte("Request received by load balancer\n"))
-	h.proxy.ServeHTTP(w, r)
+// Simple Round Robin
+func (h *Handler) nextBackend() *Backend {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+
+	current := h.currentIndex
+	logger.Debug("current Index", "index", current)
+	h.currentIndex = (h.currentIndex + 1) % len(h.backends) // can store length as well : will be lil faster
+	return h.backends[current]
 }
 
 // Close cleans up resources

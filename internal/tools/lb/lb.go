@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 	"time"
 )
@@ -45,7 +46,7 @@ func (c *Command) DefineFlags() []command.Flag {
 			Default:   8080,
 		},
 		{
-			Name:      "backend",
+			Name:      "backends",
 			Shorthand: "b",
 			Usage:     "Backend server URL (e.g., http://localhost:8081)",
 			Type:      "string",
@@ -55,15 +56,15 @@ func (c *Command) DefineFlags() []command.Flag {
 }
 
 func (c *Command) Execute(ctx context.Context, args *command.Args) error {
-	port, backend := c.parseFlags(args.Flags)
+	port, backends := c.parseFlags(args.Flags)
 
 	// Validate backend URL
-	if backend == "" {
+	if len(backends) == 0 {
 		return fmt.Errorf("backend URL is required")
 	}
 
 	// Create handler
-	handler, err := NewHandler(backend)
+	handler, err := NewHandler(backends)
 	if err != nil {
 		return fmt.Errorf("failed to create handler: %w", err)
 	}
@@ -105,8 +106,25 @@ func (c *Command) Execute(ctx context.Context, args *command.Args) error {
 	return nil
 }
 
-func (c *Command) parseFlags(flags map[string]interface{}) (int, string) {
+func (c *Command) parseFlags(flags map[string]interface{}) (int, []string) {
 	port, _ := flags["port"].(int)
-	backend, _ := flags["backend"].(string)
-	return port, backend
+	backendsStr, _ := flags["backends"].(string)
+
+	if backendsStr == "" {
+		return port, []string{}
+	}
+
+	parts := strings.Split(backendsStr, ",")
+	backends := make([]string, 0, len(parts))
+
+	//The range loop takes a snapshot of the slice at the start
+	// hence if I keep appending parts : will not gie infinite loop
+	for _, part := range parts {
+		trimmed := strings.TrimSpace(part)
+		if trimmed != "" {
+			backends = append(backends, trimmed)
+		}
+	}
+
+	return port, backends
 }
