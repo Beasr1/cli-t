@@ -1,0 +1,18 @@
+Read about weigted round robin (weird algorithm : smooth weighted rr)
+This algorithm's feel:
+    Each server builds up “credit” via CurrentWeight += Weight.
+    Servers are picked when their CurrentWeight rises highest.
+    After being selected, they “pay” for the request with CurrentWeight -= totalWeight.
+    Over time, this balances out and ensures proportional selection.
+
+
+
+Token bucket
+sliding token bucket for rate limiting
+
+
+headers can be multiple same keys --> [] string
+Accept-Encoding: gzip
+Accept-Encoding: deflate
+Accept-Encoding: br
+

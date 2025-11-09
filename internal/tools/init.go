@@ -8,6 +8,7 @@ import (
 	"cli-t/internal/tools/echo"
 	"cli-t/internal/tools/huffman"
 	"cli-t/internal/tools/json"
+	"cli-t/internal/tools/lb"
 	"cli-t/internal/tools/list"
 	versioncmd "cli-t/internal/tools/version"
 	"cli-t/internal/tools/wc"
@@ -31,6 +32,8 @@ func init() {
 		json.New(),
 		huffman.New(),
 		cut.New(),
+
+		lb.New(),
 	}
 
 	// Register each tool
@@ -61,6 +64,8 @@ func RegisterAll() error {
 		json.New(),
 		huffman.New(),
 		cut.New(),
+
+		lb.New(),
 		// grep.New(),
 		// cat.New(),
 		// Add more tools here as you create them
