@@ -16,3 +16,20 @@ Accept-Encoding: gzip
 Accept-Encoding: deflate
 Accept-Encoding: br
 
+
+
+
+
+Dynamic Load Balancing Algorithms
+There are four main dynamic algorithms:
+
+Least connection: requests are routed to the server that has the fewest current open connections.
+Weighted least connection: each server has a weight - perhaps representing it’s capacity - and requests are forwarded to the least connected server, weighted against the server’s weighting.
+Weighted response time: a running average of the response time for a request is maintained for each server and the requests are routed to the server with the current lowest average response time.
+Resource-based: distributes the request based on information about the servers current CPU, memory or network load.
+Static Load Balancing Algorithms
+There are three main static algorithms:
+
+Round robin: distributes the traffic to the load balancers in rotation, each request going to the next backend server in the list. Once the end of the list is reached, it loops back to the first server.
+Weighted round robin: each server is given a weight, allowing some severs to receive more of the traffic than others.
+IP hash: the client’s IP address is hashed and the hash is used to determine which server to send the request to.

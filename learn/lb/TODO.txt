@@ -1,0 +1,5 @@
+Weighted round-robin - Send more traffic to powerful servers
+Least connections - Route to backend with fewest active connections
+Sticky sessions - Same client → same backend ??
+Circuit breaker - Temporarily skip consistently failing backends
+Metrics endpoint - Expose /metrics for monitoring

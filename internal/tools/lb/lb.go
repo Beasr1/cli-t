@@ -52,11 +52,32 @@ func (c *Command) DefineFlags() []command.Flag {
 			Type:      "string",
 			Default:   "",
 		},
+		{
+			Name:      "health-check-interval",
+			Shorthand: "i",
+			Usage:     "Health check interval (e.g., 10s, 1m)",
+			Type:      "string",
+			Default:   "10s",
+		},
+		{
+			Name:      "health-check-path",
+			Shorthand: "",
+			Usage:     "Health check path",
+			Type:      "string",
+			Default:   "/",
+		},
+		{
+			Name:      "health-check-timeout",
+			Shorthand: "t",
+			Usage:     "Health check timeout (e.g., 5s)",
+			Type:      "string",
+			Default:   "5s",
+		},
 	}
 }
 
 func (c *Command) Execute(ctx context.Context, args *command.Args) error {
-	port, backends := c.parseFlags(args.Flags)
+	port, backends, healthCheckInterval, healthCheckPath, healthCheckTimeout := c.parseFlags(args.Flags)
 
 	// Validate backend URL
 	if len(backends) == 0 {
@@ -64,7 +85,7 @@ func (c *Command) Execute(ctx context.Context, args *command.Args) error {
 	}
 
 	// Create handler
-	handler, err := NewHandler(backends)
+	handler, err := NewHandler(backends, healthCheckInterval, healthCheckPath, healthCheckTimeout)
 	if err != nil {
 		return fmt.Errorf("failed to create handler: %w", err)
 	}
@@ -106,12 +127,15 @@ func (c *Command) Execute(ctx context.Context, args *command.Args) error {
 	return nil
 }
 
-func (c *Command) parseFlags(flags map[string]interface{}) (int, []string) {
+func (c *Command) parseFlags(flags map[string]interface{}) (int, []string, string, string, string) {
 	port, _ := flags["port"].(int)
 	backendsStr, _ := flags["backends"].(string)
+	healthCheckInterval, _ := flags["health-check-interval"].(string)
+	healthCheckPath, _ := flags["health-check-path"].(string)
+	healthCheckTimeout, _ := flags["health-check-timeout"].(string)
 
 	if backendsStr == "" {
-		return port, []string{}
+		return port, []string{}, healthCheckInterval, healthCheckPath, healthCheckTimeout
 	}
 
 	parts := strings.Split(backendsStr, ",")
@@ -126,5 +150,12 @@ func (c *Command) parseFlags(flags map[string]interface{}) (int, []string) {
 		}
 	}
 
-	return port, backends
+	logger.Debug("Flags processing",
+		"port", port, "backends",
+		backends, "healthCheckInterval",
+		healthCheckInterval, "healthCheckPath",
+		healthCheckPath, "healthCheckTimeout", healthCheckTimeout,
+	)
+
+	return port, backends, healthCheckInterval, healthCheckPath, healthCheckTimeout
 }

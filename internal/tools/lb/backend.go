@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http/httputil"
 	"net/url"
+	"sync"
 )
 
 // Backend represents a backend server
@@ -11,6 +12,7 @@ type Backend struct {
 	URL   string
 	Alive bool
 	Proxy *httputil.ReverseProxy
+	mu    *sync.RWMutex //  reads >> writes
 }
 
 // NewBackend creates a new backend server
@@ -38,5 +40,18 @@ func NewBackend(backendURL string) (*Backend, error) {
 		URL:   backendURL,
 		Proxy: proxy,
 		Alive: true, //assume all backends are healthy until proven otherwise.
+		mu:    &sync.RWMutex{},
 	}, nil
+}
+
+func (b *Backend) SetAlive(alive bool) {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	b.Alive = alive
+}
+
+func (b *Backend) IsAlive() bool {
+	b.mu.RLock()
+	defer b.mu.RUnlock()
+	return b.Alive
 }
