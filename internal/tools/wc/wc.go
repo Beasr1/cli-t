@@ -2,11 +2,10 @@ package wc
 
 import (
 	"cli-t/internal/command"
-	"cli-t/internal/shared/file"
+	"cli-t/internal/shared/io"
 	"cli-t/internal/shared/logger"
 	"context"
 	"fmt"
-	"io"
 	"strings"
 )
 
@@ -81,13 +80,13 @@ func (c *Command) Execute(ctx context.Context, args *command.Args) error {
 	)
 
 	// Read input
-	content, err := c.readInput(args)
+	_, content, err := io.ReadInput(args)
 	if err != nil {
 		return err
 	}
 
 	// Display counts
-	return c.displayCounts(content, showBytes, showLines, showWords, showChars, args.Stdout)
+	return c.displayCounts(string(content), showBytes, showLines, showWords, showChars, args.Stdout)
 }
 
 // parseFlags extracts flag values
@@ -107,29 +106,6 @@ func (c *Command) parseFlags(flags map[string]interface{}) (showBytes, showLines
 	}
 
 	return
-}
-
-// readInput reads from stdin or file
-func (c *Command) readInput(args *command.Args) (string, error) {
-	// Ensure at least one positional argument is provided (the file path)
-	if len(args.Positional) == 0 {
-		// Read from stdin
-		logger.Verbose("Reading from stdin")
-		content, err := file.ReadFrom(args.Stdin)
-		if err != nil {
-			return "", fmt.Errorf("error reading from stdin: %w", err)
-		}
-		return content, nil
-	}
-
-	// Read from file
-	filePath := args.Positional[0]
-	logger.Verbose("Reading from file", "path", filePath)
-	content, err := file.ReadContent(filePath)
-	if err != nil {
-		return "", fmt.Errorf("error reading file %s: %w", filePath, err)
-	}
-	return content, nil
 }
 
 // displayCounts performs counting and outputs results

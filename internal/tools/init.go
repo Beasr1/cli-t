@@ -10,6 +10,7 @@ import (
 	"cli-t/internal/tools/json"
 	"cli-t/internal/tools/lb"
 	"cli-t/internal/tools/list"
+	"cli-t/internal/tools/sort"
 	versioncmd "cli-t/internal/tools/version"
 	"cli-t/internal/tools/wc"
 	"fmt"
@@ -34,6 +35,7 @@ func init() {
 		cut.New(),
 
 		lb.New(),
+		sort.New(),
 	}
 
 	// Register each tool
@@ -66,6 +68,7 @@ func RegisterAll() error {
 		cut.New(),
 
 		lb.New(),
+		sort.New(),
 		// grep.New(),
 		// cat.New(),
 		// Add more tools here as you create them

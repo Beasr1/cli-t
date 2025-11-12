@@ -2,11 +2,10 @@ package huffman
 
 import (
 	"cli-t/internal/command"
-	"cli-t/internal/shared/file"
+	"cli-t/internal/shared/io"
 	"cli-t/internal/shared/logger"
 	"context"
 	"fmt"
-	"io"
 	"os"
 	"strings"
 )
@@ -76,7 +75,7 @@ func (c *Command) Execute(ctx context.Context, args *command.Args) error {
 	)
 
 	// Read input
-	inputPath, data, err := c.readInput(args, decompress)
+	inputPath, data, err := io.ReadInput(args)
 	if err != nil {
 		return err
 	}
@@ -113,30 +112,6 @@ func (c *Command) parseFlags(flags map[string]interface{}) (decompress bool, out
 	}
 
 	return
-}
-
-// readInput reads from stdin or file, returning path and data
-func (c *Command) readInput(args *command.Args, binary bool) (path string, data []byte, err error) {
-	if len(args.Positional) == 0 {
-		// Read from stdin
-		logger.Verbose("Reading from stdin")
-		data, err = io.ReadAll(args.Stdin)
-		if err != nil {
-			return "", nil, fmt.Errorf("error reading from stdin: %w", err)
-		}
-		return "stdin", data, nil
-	}
-
-	// Read from file
-	path = args.Positional[0]
-	logger.Verbose("Reading from file", "path", path)
-
-	data, err = file.ReadBytes(path)
-	if err != nil {
-		return "", nil, fmt.Errorf("error reading file: %w", err)
-	}
-
-	return path, data, nil
 }
 
 // doCompress performs compression

@@ -17,7 +17,7 @@ Accept-Encoding: deflate
 Accept-Encoding: br
 
 
-
+https://dev.to/mokiat/proper-http-shutdown-in-go-3fji
 
 
 Dynamic Load Balancing Algorithms

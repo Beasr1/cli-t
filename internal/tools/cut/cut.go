@@ -2,11 +2,10 @@ package cut
 
 import (
 	"cli-t/internal/command"
-	"cli-t/internal/shared/file"
+	"cli-t/internal/shared/io"
 	"cli-t/internal/shared/logger"
 	"context"
 	"fmt"
-	"io"
 	"strings"
 )
 
@@ -92,13 +91,13 @@ func (c *Command) Execute(ctx context.Context, args *command.Args) error {
 	)
 
 	// 2. Read input
-	content, err := c.readInput(args)
+	_, content, err := io.ReadInput(args)
 	if err != nil {
 		return err
 	}
 
 	// 3. Process lines
-	return c.processLines(content, mode, list, delimiter, suppress, args.Stdout)
+	return c.processLines(string(content), mode, list, delimiter, suppress, args.Stdout)
 }
 
 func (c *Command) parseFlags(flags map[string]interface{}) (mode, list, delimiter string, suppress bool, err error) {
@@ -136,25 +135,6 @@ func (c *Command) parseFlags(flags map[string]interface{}) (mode, list, delimite
 	}
 
 	return
-}
-
-func (c *Command) readInput(args *command.Args) (string, error) {
-	if len(args.Positional) == 0 {
-		logger.Verbose("Reading from stdin")
-		content, err := file.ReadFrom(args.Stdin)
-		if err != nil {
-			return "", fmt.Errorf("error reading from stdin: %w", err)
-		}
-		return content, nil
-	}
-
-	filePath := args.Positional[0]
-	logger.Verbose("Reading from file", "path", filePath)
-	content, err := file.ReadContent(filePath)
-	if err != nil {
-		return "", fmt.Errorf("error reading file %s: %w", filePath, err)
-	}
-	return content, nil
 }
 
 func (c *Command) processLines(content, mode, list, delimiter string, suppress bool, stdout io.Writer) error {
