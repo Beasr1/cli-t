@@ -124,23 +124,7 @@ func (c *Command) doCompress(data []byte, inputPath, outputPath string, stdout i
 		return fmt.Errorf("compression failed: %w", err)
 	}
 
-	// Determine output
-	if outputPath == "" {
-		if inputPath == "stdin" {
-			// Write to stdout
-			logger.Verbose("Writing compressed data to stdout")
-			_, err := stdout.Write(compressed)
-			return err
-		}
-		// Auto-generate filename
-		outputPath = inputPath + ".huff"
-	}
-
-	// Write to file
-	logger.Verbose("Writing compressed file", "path", outputPath)
-	if err := os.WriteFile(outputPath, compressed, 0644); err != nil {
-		return fmt.Errorf("failed to write output: %w", err)
-	}
+	io.WriteOutput(compressed, inputPath, outputPath, stdout, c.Name())
 
 	// Show stats
 	originalSize := len(data)

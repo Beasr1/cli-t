@@ -6,6 +6,8 @@ import (
 	"cli-t/internal/shared/io"
 	"cli-t/internal/shared/logger"
 	"context"
+	"sort"
+	"strings"
 )
 
 type Command struct{}
@@ -50,18 +52,16 @@ func (c *Command) DefineFlags() []command.Flag {
 }
 
 func (c *Command) Execute(ctx context.Context, args *command.Args) error {
-	_, output := c.parseFlags(args.Flags)
+	algorithm, output := c.parseFlags(args.Flags)
 
 	inputPath, content, err := io.ReadInput(args)
 	if err != nil {
 		return err
 	}
 
-	// TODO: process
-	processed := content
+	processed := c.sort(string(content), algorithm)
 
-	io.WriteOutput([]byte(processed), inputPath, output, args.Stdout)
-
+	io.WriteOutput([]byte(processed), inputPath, output, args.Stdout, c.Name())
 	return nil
 }
 
@@ -75,4 +75,24 @@ func (c *Command) parseFlags(flags map[string]interface{}) (string, string) {
 	)
 
 	return algorithm, output
+}
+
+func (c *Command) sort(content, algorithm string) string {
+	// 1. Split into lines
+	lines := strings.Split(content, "\n")
+
+	// 2. Handle empty last line
+	if len(lines) > 0 && lines[len(lines)-1] == "" {
+		lines = lines[:len(lines)-1]
+	}
+
+	// 3. Sort the lines
+	switch algorithm {
+	default:
+		logger.Debug("default algorithm")
+		sort.Strings(lines)
+	}
+
+	// 4. Join back
+	return strings.Join(lines, "\n")
 }

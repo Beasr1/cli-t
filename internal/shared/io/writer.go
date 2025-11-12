@@ -7,7 +7,7 @@ import (
 	"os"
 )
 
-func WriteOutput(data []byte, inputPath, outputPath string, stdout io.Writer) error {
+func WriteOutput(data []byte, inputPath, outputPath string, stdout io.Writer, extension string) error {
 	logger.Debug("writing output", "input_size", len(data))
 
 	// Determine output
