@@ -2,7 +2,7 @@ package huffman
 
 import (
 	"bytes"
-	"cli-t/internal/shared/algorithms/huffman"
+	"cli-t/internal/tools/huffman/algorithm"
 	"encoding/binary"
 	"fmt"
 	"strings"
@@ -26,7 +26,7 @@ func Decompress(compressedData []byte) (string, error) {
 	}
 
 	// Rebuild huffman tree
-	huffmanTree := huffman.BuildHuffmanTree(freqTable)
+	huffmanTree := algorithm.BuildHuffmanTree(freqTable)
 	if huffmanTree == nil {
 		return "", fmt.Errorf("failed to rebuild huffman tree")
 	}

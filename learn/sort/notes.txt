@@ -1,0 +1,7 @@
+"stable deduplication" vs "sorted deduplication"
+
+different between post-sort dedupelication and pre-sorts
+spoilets : post-sorting is better with higher scale (run time complex and space )
+
+pre : runTime klogk           space O(n).   n>=klogk
+post: runTime nlogn           space O(1) : resuse same

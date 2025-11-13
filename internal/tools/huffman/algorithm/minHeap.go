@@ -1,4 +1,4 @@
-package huffman
+package algorithm
 
 // An HuffmanMinHeap is a min-heap of ints.
 type HuffmanMinHeap []*HuffmanNode

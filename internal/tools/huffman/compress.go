@@ -2,7 +2,7 @@ package huffman
 
 import (
 	"bytes"
-	"cli-t/internal/shared/algorithms/huffman"
+	"cli-t/internal/tools/huffman/algorithm"
 	"encoding/binary"
 	"fmt"
 )
@@ -23,10 +23,10 @@ func Compress(content string) ([]byte, error) {
 	}
 
 	// Build frequency table
-	frequencyTable := huffman.BuildFrequencyTable(content)
+	frequencyTable := algorithm.BuildFrequencyTable(content)
 
 	// Build huffman tree
-	huffmanTree := huffman.BuildHuffmanTree(frequencyTable)
+	huffmanTree := algorithm.BuildHuffmanTree(frequencyTable)
 	if huffmanTree == nil {
 		return nil, fmt.Errorf("failed to build huffman tree")
 	}
@@ -35,10 +35,10 @@ func Compress(content string) ([]byte, error) {
 	codeMap := huffmanTree.GenerateCodes()
 
 	// Encode data
-	encodedString := huffman.EncodeData(content, codeMap)
+	encodedString := algorithm.EncodeData(content, codeMap)
 
 	// Pack bits
-	packedData, padding := huffman.PackBits(encodedString)
+	packedData, padding := algorithm.PackBits(encodedString)
 
 	// Create header
 	header := CompressedHeader{
