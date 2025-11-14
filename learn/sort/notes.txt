@@ -61,6 +61,14 @@ Divide and conquer
 Merging two sorted arrays
 Recursive splitting
 
+MergeSort algorithm - Divide, conquer, merge
+Slice operations - arr[:mid] and arr[mid:]
+Recursion base cases - Preventing infinite loops
+Stable sorting - Equal elements maintain order
+Space complexity - Creating new slices (O(n) space)
+
+
+
 
 Phase 3: HeapSort
 Learning Resources:
@@ -73,6 +81,13 @@ Key Concepts:
 Binary heap data structure
 Heapify operation
 Extract max repeatedly
+
+Binary heap data structure 
+Array-based tree representation 
+Heapify operation 
+Max heap vs min heap 
+In-place sorting 
+Guaranteed O(n log n) 
 
 
 Phase 4: RadixSort (Most Unique!)
