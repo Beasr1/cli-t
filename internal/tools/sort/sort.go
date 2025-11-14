@@ -5,6 +5,7 @@ import (
 	"cli-t/internal/command"
 	"cli-t/internal/shared/io"
 	"cli-t/internal/shared/logger"
+	"cli-t/internal/tools/sort/algorithms"
 	"context"
 	"sort"
 	"strings"
@@ -94,8 +95,16 @@ func (c *Command) sort(content, algorithm string, unique bool) string {
 		lines = lines[:len(lines)-1]
 	}
 
+	var sorter algorithms.Sorter
+
 	// 3. Sort the lines
 	switch algorithm {
+	case "quicksort":
+		sorter = algorithms.QuickSort{}
+		sorter.Sort(lines)
+	case "mergesort":
+		sorter = algorithms.MergeSort{}
+		sorter.Sort(lines)
 	default:
 		logger.Debug("default algorithm")
 		sort.Strings(lines)

@@ -5,3 +5,84 @@ spoilets : post-sorting is better with higher scale (run time complex and space 
 
 pre : runTime klogk           space O(n).   n>=klogk
 post: runTime nlogn           space O(1) : resuse same
+
+
+
+
+
+
+Phase 1: QuickSort (Start Here!)
+Why first?
+
+Most intuitive
+Most commonly used
+Great introduction to recursion
+
+Learning Resources:
+
+Visual: https://visualgo.net/en/sorting?slide=11
+Concept: https://www.youtube.com/watch?v=Hoixgm4-P4M
+Go Example: https://yourbasic.org/golang/quicksort-optimizations/
+
+Key Concepts to Understand:
+
+Pivot selection
+Partitioning (elements < pivot on left, > pivot on right)
+Recursive sorting of sub-arrays
+
+Partition algorithm - Lomuto scheme (the task is to partition the array by assuming last element as pivot element) : choose any element and make it lomuto
+In-place sorting - No extra arrays needed
+Recursion - Divide and conquer
+Pivot selection - Middle element strategy
+Invariant maintenance - Elements left < pivot < elements right
+
+
+Performance Characteristics
+Your implementation:
+
+Average: O(n log n) - when pivot divides roughly in half
+Worst: O(n²) - when always picking smallest/largest (e.g., already sorted with bad pivot choice)
+Space: O(log n) - recursion stack depth
+Stable: No - equal elements may swap order
+
+
+=--------------------------
+
+
+Phase 2: MergeSort
+Learning Resources:
+
+Visual: https://visualgo.net/en/sorting?slide=10
+Concept: https://www.youtube.com/watch?v=4VqmGXwpLqc
+
+Key Concepts:
+
+Divide and conquer
+Merging two sorted arrays
+Recursive splitting
+
+
+Phase 3: HeapSort
+Learning Resources:
+
+Visual: https://visualgo.net/en/sorting?slide=12
+Heap Structure: https://www.youtube.com/watch?v=2DmK_H7IdTo
+
+Key Concepts:
+
+Binary heap data structure
+Heapify operation
+Extract max repeatedly
+
+
+Phase 4: RadixSort (Most Unique!)
+Learning Resources:
+
+Visual: https://visualgo.net/en/sorting?slide=14
+Concept: https://www.youtube.com/watch?v=XiuSW_mEn7g
+
+Key Concepts:
+
+Non-comparison based!
+Digit-by-digit sorting
+Stable sorting of characters
