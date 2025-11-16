@@ -5,9 +5,11 @@ import (
 	"cli-t/internal/command"
 	"cli-t/internal/shared/io"
 	"cli-t/internal/shared/logger"
+	"cli-t/internal/tools/calc/stack"
 	"cli-t/internal/tools/calc/token"
 	"context"
 	"fmt"
+	"strings"
 )
 
 type Command struct{}
@@ -76,10 +78,12 @@ func (c *Command) Execute(ctx context.Context, args *command.Args) error {
 		expression = args.Positional[0]
 	}
 
-	// Now evaluate based on method
-	_ = c.calc(expression)
+	result, err := c.calc(expression)
+	if err != nil {
+		return err
+	}
 
-	// err = io.WriteOutput(result, inputPath, "", args.Stdout, c.Name())
+	fmt.Fprintln(args.Stdout, result)
 	return err
 }
 
@@ -89,18 +93,37 @@ func (c *Command) parseFlags(flags map[string]interface{}) (string, bool) {
 	return method, fromFile
 }
 
-func (c *Command) calc(content string) float64 {
-	var result float64
-	// if method == "tree" {
-	// 	result, err = c.evaluateWithTree(expression)
-	// } else {
-	// 	result, err = c.evaluateWithStack(expression)
-	// }
-
+func (c *Command) calc(content string) (string, error) {
 	tokens, err := token.Tokenizer(content)
 	if err != nil {
-		logger.Error("error", "err", err)
+		return "", err
 	}
-	logger.Info("tokens", "tokens", tokens)
-	return result
+
+	logger.Debug("tokenizer", "tokens", tokens)
+	postfix, err := stack.ToPostfix(tokens)
+	if err != nil {
+		return "", err
+	}
+
+	logger.Debug("postfix expression", "expression", postfix)
+	result, err := stack.EvaluatePostfix(postfix)
+	if err != nil {
+		return "", err
+	}
+
+	// %f: float ,   %g: remove trailing zeros
+	logger.Debug("result", "result", result)
+	return formatResult(result), nil
+}
+
+func formatResult(result float64) string {
+	// If result is close to an integer, show as integer
+	if result == float64(int64(result)) {
+		return fmt.Sprintf("%d", int64(result))
+	}
+	// Otherwise show with reasonable precision
+	formatted := fmt.Sprintf("%.10f", result)
+	formatted = strings.TrimRight(formatted, "0")
+	formatted = strings.TrimRight(formatted, ".")
+	return formatted
 }

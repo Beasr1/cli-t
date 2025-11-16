@@ -15,11 +15,12 @@ func WriteOutput(data []byte, inputPath, outputPath string, stdout io.Writer, ex
 		if inputPath == "stdin" {
 			// Write to stdout
 			logger.Verbose("Writing output data to stdout")
+			data = append(data, '\n')
 			_, err := stdout.Write(data)
 			return err
 		}
 		// Auto-generate filename
-		outputPath = inputPath + ".sort"
+		outputPath = inputPath + fmt.Sprintf(".%s", extension)
 	}
 
 	// Write to file

@@ -16,6 +16,6 @@ type Token struct {
 }
 
 // TODO: should we allow other brackets
-const OPERATOR_VALUES = "+-/*%"
+const OPERATOR_VALUES = "+-/*%^"
 const LEFT_PAREN_VALUES = "("
 const RIGHT_PAREN_VALUES = ")"

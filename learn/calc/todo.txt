@@ -1,0 +1,56 @@
+
+// TODO: Add negative number support without -- separator
+// TODO: Distinguish unary minus from binary minus operator
+// TODO: Handle cases: -5, 2*-3, (-5+3)
+// TODO: Implement better number formatting (intelligent rounding)
+// TODO: Add scientific notation for very large/small numbers
+// TODO: Support implicit multiplication: 2(3+4) → 2*(3+4)
+// TODO: Support implicit multiplication: (2+3)(4+5) → (2+3)*(4+5)
+
+
+// TODO: Add factorial operator (!)
+// TODO: Add integer division operator (//)
+// TODO: Add bitwise operators: &, |, ^, <<, >>
+// TODO: Add logical operators: &&, ||
+
+
+
+// TODO: Add trigonometric functions: sin, cos, tan
+// TODO: Add mathematical functions: sqrt, log, abs
+// TODO: Add rounding functions: ceil, floor, round
+// TODO: Support multi-argument functions: max(2,3,5), min(1,4,2)
+// TODO: Implement comma tokenization for function arguments
+
+// NOW I can do this by parsing a file
+// will learn about language
+// TODO: Add named constants: pi, e, tau
+// TODO: Support constants in expressions: 2*pi*r
+// TODO: Implement variable assignment: x=5; y=3; x+y
+// TODO: Create symbol table for variable storage
+// TODO: Add previous result reference (ans or _)
+// TODO: Support: 2+3, then ans*2 → 10
+
+
+
+// Alternative Implementation
+// TODO: Implement Expression Tree (AST) approach
+// TODO: Implement Recursive Descent Parser as alternative to Shunting Yard
+
+
+
+
+// GPT bohot jyada soch raha. maybe pick karunga isse
+// TODO: Add angle unit support (degrees vs radians)
+// TODO: Support: sin(90deg) vs sin(pi/2)
+// TODO: Implement unit conversion: 2km + 500m → 2.5km
+// TODO: Add unit tracking and validation
+// TODO: Implement symbolic computation: 2x + 3x → 5x
+// TODO: Add differentiation: d/dx(x^2) → 2x
+// TODO: Support complex numbers: (2+3i) * (1-2i)
+// TODO: Implement separate real/imaginary component tracking
+
+
+
+// TODO: Implement expression formatting/pretty-print
+// TODO: Show step-by-step evaluation: 2+3*4 → 2+(3*4) → 2+12 → 14
+// TODO: Profile and optimize memory allocations
