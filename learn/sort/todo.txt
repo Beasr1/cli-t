@@ -1,0 +1,285 @@
+TODO
+
+
+## 🟢 Simple Algorithms (Learn Fundamentals)
+
+### 1. Insertion Sort
+**What you'll learn:** 
+- Incremental building of sorted portion
+- Best for nearly-sorted data
+- Adaptive algorithm concept
+
+**Complexity:** O(n²) average, O(n) best case
+**When it wins:** Small arrays (< 10-20 elements), nearly sorted data
+
+**Resources:**
+- https://visualgo.net/en/sorting?slide=7
+- Used as base case in advanced algorithms (TimSort, IntroSort)
+
+**Challenge:** Use this in QuickSort for small subarrays!
+
+---
+
+### 2. Selection Sort
+**What you'll learn:**
+- Selection vs comparison concept
+- Minimal swaps (good for expensive writes)
+- In-place sorting
+
+**Complexity:** O(n²) always
+**When it wins:** When writes are expensive (flash memory, network)
+
+**Resources:**
+- https://visualgo.net/en/sorting?slide=6
+- Compare with insertion sort behavior
+
+---
+
+### 3. Bubble Sort
+**What you'll learn:**
+- Iterative improvement
+- Why it's inefficient (educational)
+- Optimization techniques (early termination)
+
+**Complexity:** O(n²) average, O(n) best with optimization
+**When it wins:** Never in practice (purely educational)
+
+**Resources:**
+- https://visualgo.net/en/sorting?slide=1
+- Classic teaching algorithm
+
+---
+
+## 🟡 Hybrid/Optimized Algorithms (Learn Real-World Design)
+
+### 4. TimSort ⭐ (RECOMMENDED)
+**What you'll learn:**
+- Hybrid algorithm design
+- Combining multiple strategies
+- Production algorithm (Python, Java use this!)
+- Run detection (finding sorted portions)
+
+**Complexity:** O(n log n) worst, O(n) best
+**When it wins:** Real-world data (often partially sorted)
+
+**Strategy:**
+1. Find "runs" (already sorted portions)
+2. If run too small, extend with insertion sort
+3. Merge runs using merge sort
+
+**Resources:**
+- https://en.wikipedia.org/wiki/Timsort
+- https://www.youtube.com/watch?v=NVIjHj-lrT4
+- Study Python's implementation
+
+**This is HARD but very educational!**
+
+---
+
+### 5. IntroSort (Introspective Sort)
+**What you'll learn:**
+- Algorithm switching strategy
+- Worst-case protection
+- C++ STL implementation
+
+**Strategy:**
+1. Start with QuickSort
+2. If recursion depth exceeds log(n) → switch to HeapSort
+3. For small subarrays → switch to Insertion Sort
+
+**Complexity:** O(n log n) guaranteed
+**When it wins:** General purpose (C++ `std::sort`)
+
+**Resources:**
+- https://en.wikipedia.org/wiki/Introsort
+- Combines your existing algorithms!
+
+---
+
+### 6. 3-Way QuickSort (Dutch National Flag)
+**What you'll learn:**
+- Handling duplicate elements efficiently
+- Partitioning into 3 groups (< = >)
+- Better than regular QuickSort for duplicates
+
+**Complexity:** O(n log n) avg, O(n) when many duplicates
+**When it wins:** Data with many duplicate keys
+
+**Resources:**
+- https://www.geeksforgeeks.org/3-way-quicksort-dutch-national-flag/
+- Used in Go's own sort package!
+
+---
+
+## 🔵 Specialized Algorithms (Learn Specific Use Cases)
+
+### 7. Counting Sort (Standalone)
+**What you'll learn:**
+- Non-comparison sorting
+- Integer range constraints
+- You already use this in RadixSort!
+
+**Complexity:** O(n + k) where k is range
+**When it wins:** Small integer range (0-1000)
+
+**Resources:**
+- Extract from your RadixSort
+- Make it work for integers directly
+
+---
+
+### 8. Bucket Sort
+**What you'll learn:**
+- Distribution-based sorting
+- Uniform distribution assumption
+- Hash function importance
+
+**Strategy:**
+1. Distribute elements into buckets
+2. Sort each bucket (use another algorithm!)
+3. Concatenate buckets
+
+**Complexity:** O(n) average if well-distributed
+**When it wins:** Uniformly distributed data
+
+**Resources:**
+- https://visualgo.net/en/sorting?slide=13
+- Good for floating-point numbers
+
+---
+
+### 9. Shell Sort
+**What you'll learn:**
+- Gap sequences
+- Improving insertion sort
+- Historical algorithm (1959!)
+
+**Strategy:**
+- Insertion sort with decreasing gaps
+- Final pass is regular insertion sort
+
+**Complexity:** Depends on gap sequence (O(n log² n) to O(n^(4/3)))
+**When it wins:** Medium-sized arrays, simple code
+
+**Resources:**
+- https://visualgo.net/en/sorting?slide=8
+- Try different gap sequences (Knuth, Sedgewick)
+
+---
+
+## 🟣 Parallel/Concurrent Algorithms (Learn Concurrency)
+
+### 10. Bitonic Sort
+**What you'll learn:**
+- Sorting networks
+- Parallelizable comparisons
+- GPU-friendly algorithm
+
+**Complexity:** O(log² n) parallel time
+**When it wins:** Hardware parallelism (GPU)
+
+**Resources:**
+- https://en.wikipedia.org/wiki/Bitonic_sorter
+- Fixed comparison network
+
+---
+
+### 11. Parallel QuickSort
+**What you'll learn:**
+- Goroutines for sorting
+- Work distribution
+- When parallelism helps/hurts
+
+**Strategy:**
+- Partition normally
+- Sort left and right in separate goroutines
+- Sync with WaitGroup
+
+**Resources:**
+- Go concurrency patterns
+- Benchmark vs serial version!
+
+---
+
+### 12. Sample Sort (Parallel Bucket Sort)
+**What you'll learn:**
+- Multi-threaded sorting
+- Load balancing
+- Distributed sorting concept
+
+**Complexity:** O(n/p log n) with p processors
+**Resources:**
+- Used in parallel databases
+
+---
+
+## 🔴 Fun/Educational Algorithms (Learn by Comparison)
+
+### 13. Cycle Sort
+**What you'll learn:**
+- Minimal number of writes
+- Cyclic permutation concept
+- Theoretical importance
+
+**Complexity:** O(n²) but minimal writes
+**When it wins:** When writes are VERY expensive
+
+**Resources:**
+- https://en.wikipedia.org/wiki/Cycle_sort
+- Interesting theoretical algorithm
+
+---
+
+### 14. Pancake Sort
+**What you'll learn:**
+- Restricted operations (only flip prefix)
+- Fun algorithm
+- Bounds proofs
+
+**Complexity:** O(n²)
+**When it wins:** Never (just fun!)
+
+**Resources:**
+- https://en.wikipedia.org/wiki/Pancake_sorting
+- Famous problem (Bill Gates co-authored paper!)
+
+---
+
+### 15. Bogo Sort (Don't Actually Use!)
+**What you'll learn:**
+- Why randomized algorithms matter
+- Probability analysis
+- What NOT to do
+
+**Complexity:** O(∞) average (O(n × n!) actually)
+**When it wins:** NEVER!
+
+**Resources:**
+- Shuffle randomly, check if sorted, repeat
+- Purely educational/humorous
+
+---
+
+## 🎯 My Recommended Learning Path
+
+
+### Phase 2: Real-World Hybrid (Next Week)
+4. **TimSort** - Learn how production sorts work
+6. Benchmark on real-world data
+
+
+
+## 📚 Algorithm Comparison Table
+
+| Algorithm | Best | Average | Worst | Space | Stable | In-Place | Best For |
+|-----------|------|---------|-------|-------|--------|----------|----------|
+| Insertion | O(n) | O(n²) | O(n²) | O(1) | Yes | Yes | Nearly sorted |
+| Selection | O(n²) | O(n²) | O(n²) | O(1) | No | Yes | Min swaps |
+| Bubble | O(n) | O(n²) | O(n²) | O(1) | Yes | Yes | Teaching only |
+| Shell | O(n log n) | O(n^(4/3)) | O(n²) | O(1) | No | Yes | Medium arrays |
+| **TimSort** | **O(n)** | **O(n log n)** | **O(n log n)** | **O(n)** | **Yes** | **No** | **Real-world** |
+| **IntroSort** | **O(n log n)** | **O(n log n)** | **O(n log n)** | **O(log n)** | **No** | **Yes** | **General** |
+| 3-Way Quick | O(n) | O(n log n) | O(n²) | O(log n) | No | Yes | Many dupes |
+| Counting | O(n+k) | O(n+k) | O(n+k) | O(k) | Yes | No | Small range |
+| Bucket | O(n) | O(n+k) | O(n²) | O(n) | Yes | No | Uniform dist |
+
