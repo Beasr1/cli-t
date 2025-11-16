@@ -101,3 +101,17 @@ Key Concepts:
 Non-comparison based!
 Digit-by-digit sorting
 Stable sorting of characters
+
+
+https://www.youtube.com/watch?v=Y95a-8oNqps
+idea is to assume current digits' lsb is already sorted. (correct relative order)
+7 28            7 40                 7 89
+--->            when grouping all 7s
+       (728, 740, 789) all sorted
+
+fast af = to make are assumption true we need to sor lsb
+28        40        89
+
+and so on ===> we would need to start with lsb (minimal impact of sorts feel)
+
+radix sort doesn't actually care that you're sorting integers, it just needs a lexicographic order between small enough objects - the 8-bit sort of 32-bit integers assumes that 8-bit blocks are lexicographically ordered. So surely radix sort can be extended to work with more general datatypes, so long as we provide a suitable ordering. If we assume a longer string is greater than a smaller one, radix sort on strings is quite straightforward by just sorting prefixes.

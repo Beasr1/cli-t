@@ -11,6 +11,16 @@ import (
 	"strings"
 )
 
+/*
+TODO: Reverse Flag -r, Case-Insensitive Sort -f, Numeric Sort -n
+Benchmark Mode --benchmark,
+
+External Sort (Files Too Big for Memory)
+Parallel Sort
+Progress Bars for Long Operations
+
+*/
+
 type Command struct{}
 
 func New() command.Command {
@@ -101,11 +111,19 @@ func (c *Command) sort(content, algorithm string, unique bool) string {
 	switch algorithm {
 	case "quicksort":
 		sorter = algorithms.QuickSort{}
-		sorter.Sort(lines)
+		lines = sorter.Sort(lines)
 	case "mergesort":
 		sorter = algorithms.MergeSort{}
-		sorter.Sort(lines)
+		lines = sorter.Sort(lines)
+	case "heapsort":
+		sorter = algorithms.HeapSort{}
+		lines = sorter.Sort(lines)
+	case "radixsort":
+		sorter = algorithms.RadixSort{}
+		lines = sorter.Sort(lines)
 	default:
+		// default
+		// TODO: but make sure if unsupported algorithm is given with flag : throw error
 		logger.Debug("default algorithm")
 		sort.Strings(lines)
 	}
