@@ -11,6 +11,7 @@ import (
 	"cli-t/internal/tools/json"
 	"cli-t/internal/tools/lb"
 	"cli-t/internal/tools/list"
+	"cli-t/internal/tools/redis"
 	"cli-t/internal/tools/sort"
 	versioncmd "cli-t/internal/tools/version"
 	"cli-t/internal/tools/wc"
@@ -38,6 +39,7 @@ func init() {
 		lb.New(),
 		sort.New(),
 		calc.New(),
+		redis.New(),
 	}
 
 	// Register each tool
@@ -72,6 +74,7 @@ func RegisterAll() error {
 		lb.New(),
 		sort.New(),
 		calc.New(),
+		redis.New(),
 		// grep.New(),
 		// cat.New(),
 		// Add more tools here as you create them

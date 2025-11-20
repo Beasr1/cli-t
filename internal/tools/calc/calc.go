@@ -56,6 +56,10 @@ func (c *Command) DefineFlags() []command.Flag {
 /*
 Cool things
 go run ./cmd/cli-t/main.go calc --  "-2+-3"
+
+Negative numbers require -- separator (./cli-t calc -- "-5+3")
+Floating point precision issues (not rounded)
+No function support (sin, cos, sqrt, etc.)
 */
 func (c *Command) Execute(ctx context.Context, args *command.Args) error {
 	_, fromFile := c.parseFlags(args.Flags)
