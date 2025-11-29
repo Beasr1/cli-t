@@ -1,8 +1,12 @@
 package server
 
 import (
+	"cli-t/internal/shared/logger"
 	"cli-t/internal/tools/redis/protocol"
+	"cli-t/internal/tools/redis/store"
+	"strconv"
 	"strings"
+	"time"
 )
 
 // RESP Protocol Rule: Commands Are Always Arrays of Bulk Strings
@@ -34,6 +38,8 @@ func (s *Server) handleCommand(msg protocol.RESPValue) protocol.RESPValue {
 		return s.handleSet(arr.Elements)
 	case "GET":
 		return s.handleGet(arr.Elements)
+	case "TTL":
+		return s.handleTtl(arr.Elements)
 	default:
 		return protocol.Error{Message: "ERR unknown command '" + cmd + "'"}
 	}
@@ -65,7 +71,7 @@ func (s *Server) handleEcho(args []protocol.RESPValue) protocol.RESPValue {
 }
 
 func (s *Server) handleSet(args []protocol.RESPValue) protocol.RESPValue {
-	if len(args) != 3 {
+	if len(args) < 3 {
 		return protocol.Error{Message: "ERR wrong number of arguments for 'set' command"}
 	}
 
@@ -80,7 +86,48 @@ func (s *Server) handleSet(args []protocol.RESPValue) protocol.RESPValue {
 		return protocol.Error{Message: "ERR value must be a string"}
 	}
 
-	s.store.Set(key.Value, value.Value)
+	// Parse optional EX/PX flags
+	var expiresAt *time.Time
+	for i := 3; i < len(args); i++ {
+		flag, ok := args[i].(protocol.BulkString)
+		if !ok {
+			return protocol.Error{Message: "ERR syntax error"}
+		}
+		f := strings.ToUpper(flag.Value)
+
+		switch f {
+		case "EX":
+			if i+1 >= len(args) {
+				return protocol.Error{Message: "ERR syntax error"}
+			}
+
+			secondsArg, ok := args[i+1].(protocol.BulkString)
+			if !ok {
+				return protocol.Error{Message: "ERR value is not an integer"}
+			}
+
+			seconds, err := strconv.Atoi(secondsArg.Value)
+			if err != nil || seconds <= 0 {
+				return protocol.Error{Message: "ERR value is not an integer or out of range"}
+			}
+
+			expiry := time.Now().Add(time.Duration(seconds) * time.Second)
+			expiresAt = &expiry
+			i++ // Skip next arg
+
+			logger.Debug("SET with expiry", "key", key.Value, "seconds", seconds)
+		default:
+			return protocol.Error{Message: "ERR syntax error"}
+		}
+
+		// TODO: Add PX, EXAT, PXAT
+	}
+
+	s.store.Set(key.Value, store.StoreValue{
+		Data:      value.Value,
+		ExpiresAt: expiresAt,
+	})
+
 	return protocol.SimpleString{Value: "OK"}
 }
 
@@ -105,7 +152,25 @@ func (s *Server) handleGet(args []protocol.RESPValue) protocol.RESPValue {
 
 	// Key found → return the value
 	return protocol.BulkString{
-		Value:  value,
+		Value:  value.Data,
 		IsNull: false, //  Not null when found
 	}
+}
+
+func (s *Server) handleTtl(args []protocol.RESPValue) protocol.RESPValue {
+	if len(args) != 2 { //  GET key (2 args total)
+		return protocol.Error{Message: "ERR wrong number of arguments for 'ttl' command"}
+	}
+
+	// Safe type assertion
+	key, ok := args[1].(protocol.BulkString)
+	if !ok {
+		return protocol.Error{Message: "ERR key must be a string"}
+	}
+
+	ttl := s.store.GetTTL(key.Value)
+	return protocol.Integer{
+		Value: ttl,
+	}
+
 }

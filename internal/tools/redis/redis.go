@@ -67,7 +67,7 @@ func (c *Command) Execute(ctx context.Context, args *command.Args) error {
 	// Start server in goroutine
 	go func() {
 		// Start server (blocks until Ctrl+C) : This runs forever until interrupted
-		if err := server.Start(); err != nil {
+		if err := server.Start(ctx); err != nil {
 			// make sure ctrl C : does not return server failed
 			logger.Fatal("Server failed", "error", err)
 		}

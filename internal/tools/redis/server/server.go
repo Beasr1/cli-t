@@ -32,7 +32,7 @@ func New(host string, port int, store store.Store) *Server {
 	}
 }
 
-func (s *Server) Start() error {
+func (s *Server) Start(ctx context.Context) error {
 	addr := fmt.Sprintf("%s:%d", s.host, s.port)
 
 	// Listen on TCP (NOT http.Server!)
@@ -43,6 +43,10 @@ func (s *Server) Start() error {
 	s.listener = listener
 
 	logger.Info("Redis server listening", "addr", addr)
+
+	// Start background expiry worker
+	go s.store.StartExpiryWorker(ctx)
+	logger.Info("Started expiry cleanup worker")
 
 	// Accept connections loop
 	for {
