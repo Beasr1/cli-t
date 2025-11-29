@@ -34,6 +34,11 @@ func (s *InMemoryStore) getIfValid(key string) (StoreValue, bool) {
 	return val, true
 }
 
+// Private helper - assumes lock is already held!
+func (s *InMemoryStore) set(key string, value StoreValue) {
+	s.data[key] = value
+}
+
 // Get retrieves a value by key
 // Returns (value, true) if found, ("", false) if not found
 func (s *InMemoryStore) Get(key string) (StoreValue, bool) {
@@ -47,7 +52,7 @@ func (s *InMemoryStore) Set(key string, value StoreValue) {
 	s.mu.Lock() // Exclusive lock - blocks all readers and writers
 	defer s.mu.Unlock()
 
-	s.data[key] = value
+	s.set(key, value)
 }
 
 // Add this method to InMemoryStore
@@ -133,4 +138,32 @@ func (s *InMemoryStore) GetTTL(key string) int64 {
 	}
 
 	return int64(ttl.Seconds())
+}
+
+// SetExpiry sets an expiration time on an existing key
+// Returns true if key exists and expiry was set
+// Returns false if key doesn't exist
+func (s *InMemoryStore) SetExpiry(key string, seconds int) bool {
+	// TODO: Implement this
+	// Hints:
+	// - What lock do you need? (you're modifying)
+	// - Check if key exists (use getIfValid helper?)
+	// - Calculate expiry time (time.Now().Add(...))
+	// - Update the ExpiresAt field
+	// - Return true/false based on success
+
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	val, exists := s.getIfValid(key)
+	if !exists {
+		return false
+	}
+
+	expiresAt := time.Now().Add(time.Duration(seconds) * time.Second)
+	s.set(key, StoreValue{
+		Data:      val.Data,
+		ExpiresAt: &expiresAt,
+	})
+	return true
 }

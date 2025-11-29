@@ -18,6 +18,7 @@ type Store interface {
 	CleanExpiredKeys() int
 	StartExpiryWorker(ctx context.Context)
 	GetTTL(key string) int64
+	SetExpiry(key string, seconds int) bool
 	// We'll add more methods later (Delete, Exists, etc.)
 }
 

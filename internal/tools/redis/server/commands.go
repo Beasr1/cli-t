@@ -40,6 +40,8 @@ func (s *Server) handleCommand(msg protocol.RESPValue) protocol.RESPValue {
 		return s.handleGet(arr.Elements)
 	case "TTL":
 		return s.handleTtl(arr.Elements)
+	case "EXPIRE":
+		return s.handleExpire(arr.Elements)
 	default:
 		return protocol.Error{Message: "ERR unknown command '" + cmd + "'"}
 	}
@@ -171,6 +173,36 @@ func (s *Server) handleTtl(args []protocol.RESPValue) protocol.RESPValue {
 	ttl := s.store.GetTTL(key.Value)
 	return protocol.Integer{
 		Value: ttl,
+	}
+
+}
+
+func (s *Server) handleExpire(args []protocol.RESPValue) protocol.RESPValue {
+	if len(args) != 3 {
+		return protocol.Error{Message: "ERR wrong number of arguments for 'expire' command"}
+	}
+
+	// Safe type assertions
+	key, ok := args[1].(protocol.BulkString)
+	if !ok {
+		return protocol.Error{Message: "ERR key must be a string"}
+	}
+
+	expireBulk, ok := args[2].(protocol.BulkString)
+	if !ok {
+		return protocol.Error{Message: "ERR value must be a string"}
+	}
+
+	expire, err := strconv.Atoi(expireBulk.Value)
+	if err != nil || expire < 0 {
+		return protocol.Error{Message: "ERR value is not an integer or out of range"}
+	}
+
+	success := s.store.SetExpiry(key.Value, expire)
+	if success {
+		return protocol.Integer{Value: 1}
+	} else {
+		return protocol.Integer{Value: 0}
 	}
 
 }
