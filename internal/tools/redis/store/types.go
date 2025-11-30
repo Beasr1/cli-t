@@ -6,8 +6,17 @@ import (
 	"time"
 )
 
+type ValueType string
+
+const (
+	TypeString ValueType = "string"
+	TypeList   ValueType = "list"
+)
+
 type StoreValue struct {
-	Data      string
+	Type      ValueType
+	Data      string     // For strings
+	List      []string   // For lists
 	ExpiresAt *time.Time // nil = no expiry
 }
 
@@ -23,6 +32,9 @@ type Store interface {
 	Delete(keys ...string) int
 	Incr(key string) (int64, error)
 	Decr(key string) (int64, error)
+	LPush(key string, values ...string) (int64, error)
+	RPush(key string, values ...string) (int64, error)
+	LRange(key string, start, stop int) ([]string, error)
 	// We'll add more methods later (Delete, Exists, etc.)
 }
 

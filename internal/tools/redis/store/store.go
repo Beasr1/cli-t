@@ -162,10 +162,8 @@ func (s *InMemoryStore) SetExpiry(key string, seconds int) bool {
 	}
 
 	expiresAt := time.Now().Add(time.Duration(seconds) * time.Second)
-	s.set(key, StoreValue{
-		Data:      val.Data,
-		ExpiresAt: &expiresAt,
-	})
+	val.ExpiresAt = &expiresAt
+	s.set(key, val)
 	return true
 }
 
@@ -207,6 +205,12 @@ func (s *InMemoryStore) Incr(key string) (int64, error) {
 
 	var currentNum int64
 	if exists {
+
+		// Check if it's a string
+		if val.Type != TypeString {
+			return 0, fmt.Errorf("WRONGTYPE Operation against a key holding the wrong kind of value")
+		}
+
 		// Parse as integer
 		// If parse fails, return error
 		num, err := strconv.ParseInt(val.Data, 10, 64)
@@ -226,6 +230,7 @@ func (s *InMemoryStore) Incr(key string) (int64, error) {
 	// Store back as string
 	// Return new value
 	val.Data = strconv.FormatInt(newValue, 10)
+	val.Type = TypeString
 	s.set(key, val)
 	return newValue, nil
 }
@@ -239,6 +244,12 @@ func (s *InMemoryStore) Decr(key string) (int64, error) {
 
 	var currentNum int64
 	if exists {
+
+		// Check if it's a string
+		if val.Type != TypeString {
+			return 0, fmt.Errorf("WRONGTYPE Operation against a key holding the wrong kind of value")
+		}
+
 		// Parse as integer
 		// If parse fails, return error
 		num, err := strconv.ParseInt(val.Data, 10, 64)
@@ -258,6 +269,110 @@ func (s *InMemoryStore) Decr(key string) (int64, error) {
 	// Store back as string
 	// Return new value
 	val.Data = strconv.FormatInt(newValue, 10)
+	val.Type = TypeString
 	s.set(key, val)
 	return newValue, nil
+}
+
+func (s *InMemoryStore) LPush(key string, values ...string) (int64, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	val, exists := s.getIfValid(key)
+
+	var list []string
+	if exists {
+		// Key exists - check type
+		if val.Type != TypeList {
+			return 0, fmt.Errorf("WRONGTYPE Operation against a key holding the wrong kind of value")
+		}
+		list = val.List
+	} else {
+		// New list
+		list = []string{}
+	}
+
+	// Push to LEFT means PREPEND
+	newList := append(values, list...)
+
+	// Store back
+	s.set(key, StoreValue{
+		Type:      TypeList,
+		List:      newList,
+		ExpiresAt: val.ExpiresAt,
+	})
+
+	return int64(len(newList)), nil
+}
+
+func (s *InMemoryStore) RPush(key string, values ...string) (int64, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	val, exists := s.getIfValid(key)
+
+	var list []string
+	if exists {
+		// Key exists - check type
+		if val.Type != TypeList {
+			return 0, fmt.Errorf("WRONGTYPE Operation against a key holding the wrong kind of value")
+		}
+		list = val.List
+	} else {
+		// New list
+		list = []string{}
+	}
+
+	// Push to LEFT means PREPEND
+	newList := append(list, values...)
+
+	// Store back
+	s.set(key, StoreValue{
+		Type:      TypeList,
+		List:      newList,
+		ExpiresAt: val.ExpiresAt,
+	})
+
+	return int64(len(newList)), nil
+}
+
+func (s *InMemoryStore) LRange(key string, start, stop int) ([]string, error) {
+	s.mu.RLock() // Read-only!
+	defer s.mu.RUnlock()
+
+	val, exists := s.getIfValid(key)
+	if !exists {
+		return []string{}, nil // Empty array for non-existent
+	}
+
+	if val.Type != TypeList {
+		return nil, fmt.Errorf("WRONGTYPE Operation against a key holding the wrong kind of value")
+	}
+
+	list := val.List
+	length := len(list)
+
+	// Handle negative indices
+	// -1 means last element, -2 means second-to-last, etc.
+	if start < 0 {
+		start = length + start
+	}
+	if stop < 0 {
+		stop = length + stop
+	}
+
+	// Bounds checking
+	if start < 0 {
+		start = 0
+	}
+	if stop >= length {
+		stop = length - 1
+	}
+	if start > stop {
+		return []string{}, nil
+	}
+
+	// Slice syntax: [start:stop+1]
+	// (stop is inclusive in Redis!)
+	return list[start : stop+1], nil
 }

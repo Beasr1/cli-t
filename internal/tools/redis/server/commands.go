@@ -50,6 +50,12 @@ func (s *Server) handleCommand(msg protocol.RESPValue) protocol.RESPValue {
 		return s.handleIncr(arr.Elements)
 	case "DECR":
 		return s.handleDecr(arr.Elements)
+	case "LPUSH":
+		return s.handleLPush(arr.Elements)
+	case "RPUSH":
+		return s.handleRPush(arr.Elements)
+	case "LRANGE":
+		return s.handleLRange(arr.Elements)
 	default:
 		return protocol.Error{Message: "ERR unknown command '" + cmd + "'"}
 	}
@@ -204,6 +210,7 @@ func (s *Server) handleSet(args []protocol.RESPValue) protocol.RESPValue {
 	s.store.Set(key.Value, store.StoreValue{
 		Data:      value.Value,
 		ExpiresAt: expiresAt,
+		Type:      store.TypeString,
 	})
 
 	return protocol.SimpleString{Value: "OK"}
@@ -373,4 +380,105 @@ func (s *Server) handleDecr(args []protocol.RESPValue) protocol.RESPValue {
 	return protocol.Integer{
 		Value: newVal,
 	}
+}
+
+func (s *Server) handleLPush(args []protocol.RESPValue) protocol.RESPValue {
+	if len(args) < 3 { // LPUSH key value1 [value2 ...]
+		return protocol.Error{Message: "ERR wrong number of arguments for 'lpush' command"}
+	}
+
+	key, ok := args[1].(protocol.BulkString)
+	if !ok {
+		return protocol.Error{Message: "ERR key must be a string"}
+	}
+
+	// Collect all values
+	values := []string{}
+	for i := 2; i < len(args); i++ {
+		val, ok := args[i].(protocol.BulkString)
+		if !ok {
+			return protocol.Error{Message: "ERR value must be a string"}
+		}
+		values = append(values, val.Value)
+	}
+
+	count, err := s.store.LPush(key.Value, values...)
+	if err != nil {
+		return protocol.Error{Message: err.Error()}
+	}
+
+	return protocol.Integer{Value: count}
+}
+
+func (s *Server) handleRPush(args []protocol.RESPValue) protocol.RESPValue {
+	if len(args) < 3 { // RPUSH key value1 [value2 ...]
+		return protocol.Error{Message: "ERR wrong number of arguments for 'lpush' command"}
+	}
+
+	key, ok := args[1].(protocol.BulkString)
+	if !ok {
+		return protocol.Error{Message: "ERR key must be a string"}
+	}
+
+	// Collect all values
+	values := []string{}
+	for i := 2; i < len(args); i++ {
+		val, ok := args[i].(protocol.BulkString)
+		if !ok {
+			return protocol.Error{Message: "ERR value must be a string"}
+		}
+		values = append(values, val.Value)
+	}
+
+	count, err := s.store.RPush(key.Value, values...)
+	if err != nil {
+		return protocol.Error{Message: err.Error()}
+	}
+
+	return protocol.Integer{Value: count}
+}
+
+func (s *Server) handleLRange(args []protocol.RESPValue) protocol.RESPValue {
+	if len(args) != 4 { // LRANGE key start stop
+		return protocol.Error{Message: "ERR wrong number of arguments for 'lrange' command"}
+	}
+
+	key, ok := args[1].(protocol.BulkString)
+	if !ok {
+		return protocol.Error{Message: "ERR key must be a string"}
+	}
+
+	startBulk, ok := args[2].(protocol.BulkString)
+	if !ok {
+		return protocol.Error{Message: "ERR value must be a string"}
+	}
+
+	start, err := strconv.Atoi(startBulk.Value)
+	if err != nil {
+		return protocol.Error{Message: "ERR value is not an integer or out of range"}
+	}
+
+	stopBulk, ok := args[3].(protocol.BulkString)
+	if !ok {
+		return protocol.Error{Message: "ERR value must be a string"}
+	}
+
+	stop, err := strconv.Atoi(stopBulk.Value)
+	if err != nil {
+		return protocol.Error{Message: "ERR value is not an integer or out of range"}
+	}
+
+	// Redis allows negative indice
+	result, err := s.store.LRange(key.Value, start, stop)
+	if err != nil {
+		return protocol.Error{Message: err.Error()}
+	}
+
+	// Convert []string to Array of BulkStrings
+	elements := make([]protocol.RESPValue, len(result))
+	for i, val := range result {
+		elements[i] = protocol.BulkString{Value: val}
+	}
+
+	return protocol.Array{Elements: elements}
 }

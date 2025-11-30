@@ -38,7 +38,27 @@ redis-cli communitcates in RESP protocol : bulk strings
 
 
 
+v0 originally supported string
+now it also supports list
+Why not create separate maps for strings vs lists? accessing 2 data stores will add to redudnancy. also will have to take care of key collision and cleanup overhead. single source truth
+What are the tradeoffs of having both Data and List fields? will need empty 24 bytes minimum for pointer ref even if unused
+How much memory is "wasted" when a string doesn't use List field? memory occupied by pointer
+If you have 1 million string keys, how much memory is "wasted"? (24 MB)
+ ~24 bytes overhead per string, ~16 bytes overhead per list, acceptable tradeoff for simpler code, memory vs complexity.
+Could you use interface{} instead? Why didn't you? interface would have been too generic. ype assertions needed everywhere, less explicit, harder to debug, lose compile-time safety, harder to see structure.
 
+
+Why use type ValueType string instead of just string? could have but would be better for verbosity. Type safety, autocomplete in IDE, prevents typos, documents intent, compile-time checking.
+What happens if Type is empty string ""? no type set to storevalue. throws wrong type error
+Could you use iota here? Why or why not? idk. string is more readable in logs/debugging, easier to JSON marshal, self-documenting, small enum so no performance benefit from int.
+
+
+type StoreValue struct {
+    Type      ValueType    // string = 16 bytes (pointer + len)
+    Data      string       // string = 16 bytes  
+    List      []string     // slice = 24 bytes (pointer + len + cap)
+    ExpiresAt *time.Time   // pointer = 8 bytes
+}
 
 ## TCP
 redis uses tcp 
@@ -70,9 +90,39 @@ both is better since active expiry cron will not need to be tight and its necess
 - Can't call locked method from locked method
 - Race detector working overview
 
-## todos
-all the todos left for this command
 
-LPUSH - insert all the values at the head of a list.
-RPUSH - insert all the values at the tail of a list.
-SAVE - save the database state to disk, you should also implement load on startup alongside this.
+
+## TODO - Future Redis Features
+
+### High Priority
+- **SAVE/LOAD:** Persist database to disk (RDB format)
+  - Implement SAVE command to snapshot data
+  - Load snapshot on server startup
+  - Handle corruption/partial writes
+
+### List Operations (Nice to Have)
+- **LPOP/RPOP:** Remove and return elements from list ends
+- **LLEN:** Return list length
+- **LINDEX:** Get element at index
+- **LSET:** Set element at index
+
+### New Data Types
+- **Hash:** HSET, HGET, HDEL, HGETALL
+- **Set:** SADD, SMEMBERS, SISMEMBER, SREM
+- **Sorted Set:** ZADD, ZRANGE, ZREM
+
+### Protocol Improvements
+- **Streaming Parser:** Handle messages > 4KB
+- **Partial Read Support:** Handle TCP fragmentation
+- **Pipelining:** Batch multiple commands
+
+### Advanced Features
+- **Pub/Sub:** PUBLISH, SUBSCRIBE channels
+- **Transactions:** MULTI, EXEC, DISCARD
+- **Replication:** Master-slave setup
+- **Cluster Mode:** Distributed sharding
+
+### Performance
+- **Benchmarking:** Compare with real Redis
+- **Memory Optimization:** Reduce per-key overhead
+- **Lock Optimization:** Per-key locks instead of global
