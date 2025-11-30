@@ -19,6 +19,10 @@ type Store interface {
 	StartExpiryWorker(ctx context.Context)
 	GetTTL(key string) int64
 	SetExpiry(key string, seconds int) bool
+	Exists(keys ...string) int
+	Delete(keys ...string) int
+	Incr(key string) (int64, error)
+	Decr(key string) (int64, error)
 	// We'll add more methods later (Delete, Exists, etc.)
 }
 

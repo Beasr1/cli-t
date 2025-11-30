@@ -42,6 +42,14 @@ func (s *Server) handleCommand(msg protocol.RESPValue) protocol.RESPValue {
 		return s.handleTtl(arr.Elements)
 	case "EXPIRE":
 		return s.handleExpire(arr.Elements)
+	case "EXISTS":
+		return s.handleExists(arr.Elements)
+	case "DEL":
+		return s.handleDelete(arr.Elements)
+	case "INCR":
+		return s.handleIncr(arr.Elements)
+	case "DECR":
+		return s.handleDecr(arr.Elements)
 	default:
 		return protocol.Error{Message: "ERR unknown command '" + cmd + "'"}
 	}
@@ -108,6 +116,7 @@ func (s *Server) handleSet(args []protocol.RESPValue) protocol.RESPValue {
 				return protocol.Error{Message: "ERR value is not an integer"}
 			}
 
+			// Parse seconds, create time.Now().Add(seconds)
 			seconds, err := strconv.Atoi(secondsArg.Value)
 			if err != nil || seconds <= 0 {
 				return protocol.Error{Message: "ERR value is not an integer or out of range"}
@@ -118,11 +127,78 @@ func (s *Server) handleSet(args []protocol.RESPValue) protocol.RESPValue {
 			i++ // Skip next arg
 
 			logger.Debug("SET with expiry", "key", key.Value, "seconds", seconds)
+		case "PX":
+			if i+1 >= len(args) {
+				return protocol.Error{Message: "ERR syntax error"}
+			}
+
+			milliSecondsArg, ok := args[i+1].(protocol.BulkString)
+			if !ok {
+				return protocol.Error{Message: "ERR value is not an integer"}
+			}
+
+			// Create expiry: time.Now().Add(time.Duration(millis) * time.Millisecond)
+			milliSeconds, err := strconv.Atoi(milliSecondsArg.Value)
+			if err != nil || milliSeconds <= 0 {
+				return protocol.Error{Message: "ERR value is not an integer or out of range"}
+			}
+
+			expiry := time.Now().Add(time.Duration(milliSeconds) * time.Millisecond)
+			expiresAt = &expiry
+			i++ // Skip next arg
+
+			logger.Debug("SET with PX", "key", key.Value, "milliSeconds", milliSeconds)
+		case "EXAT":
+			if i+1 >= len(args) {
+				return protocol.Error{Message: "ERR syntax error"}
+			}
+
+			timestampArg, ok := args[i+1].(protocol.BulkString)
+			if !ok {
+				return protocol.Error{Message: "ERR value is not an integer"}
+			}
+
+			timestampInt, err := strconv.ParseInt(timestampArg.Value, 10, 64)
+			if err != nil {
+				return protocol.Error{Message: "ERR value is not an integer"}
+			}
+
+			timestamp := time.Unix(timestampInt, 0)
+			if time.Until(timestamp) <= 0 {
+				return protocol.Error{Message: "ERR invalid expire time in 'set' command"}
+			}
+
+			expiresAt = &timestamp
+			i++ // Skip next arg
+
+			logger.Debug("SET with EXAT", "key", key.Value, "timestamp", timestamp)
+		case "PXAT":
+			if i+1 >= len(args) {
+				return protocol.Error{Message: "ERR syntax error"}
+			}
+
+			timestampMillisArg, ok := args[i+1].(protocol.BulkString)
+			if !ok {
+				return protocol.Error{Message: "ERR value is not an integer"}
+			}
+
+			timestampMs, err := strconv.ParseInt(timestampMillisArg.Value, 10, 64)
+			if err != nil {
+				return protocol.Error{Message: "ERR value is not an integer"}
+			}
+
+			timestamp := time.Unix(timestampMs/1000, (timestampMs%1000)*1000000)
+			if time.Until(timestamp) <= 0 {
+				return protocol.Error{Message: "ERR invalid expire time in 'set' command"}
+			}
+
+			expiresAt = &timestamp
+			i++ // Skip next arg
+
+			logger.Debug("SET with PXAT", "key", key.Value, "timestamp", timestamp)
 		default:
 			return protocol.Error{Message: "ERR syntax error"}
 		}
-
-		// TODO: Add PX, EXAT, PXAT
 	}
 
 	s.store.Set(key.Value, store.StoreValue{
@@ -205,4 +281,96 @@ func (s *Server) handleExpire(args []protocol.RESPValue) protocol.RESPValue {
 		return protocol.Integer{Value: 0}
 	}
 
+}
+
+func (s *Server) handleExists(args []protocol.RESPValue) protocol.RESPValue {
+	if len(args) < 2 {
+		return protocol.Error{Message: "ERR wrong number of arguments for 'EXISTS' command"}
+	}
+
+	keys := []string{}
+
+	for i := 1; i < len(args); i++ {
+		// Safe type assertions
+		key, ok := args[i].(protocol.BulkString)
+		if !ok {
+			return protocol.Error{Message: "ERR key must be a string"}
+		}
+		keys = append(keys, key.Value)
+	}
+
+	exists := s.store.Exists(keys...)
+	return protocol.Integer{Value: int64(exists)}
+}
+
+func (s *Server) handleDelete(args []protocol.RESPValue) protocol.RESPValue {
+	if len(args) < 2 {
+		return protocol.Error{Message: "ERR wrong number of arguments for 'DEL' command"}
+	}
+
+	keys := []string{}
+
+	for i := 1; i < len(args); i++ {
+		// Safe type assertions
+		key, ok := args[i].(protocol.BulkString)
+		if !ok {
+			return protocol.Error{Message: "ERR key must be a string"}
+		}
+		keys = append(keys, key.Value)
+	}
+
+	count := s.store.Delete(keys...)
+	return protocol.Integer{Value: int64(count)}
+}
+
+func (s *Server) handleIncr(args []protocol.RESPValue) protocol.RESPValue {
+	// Check arg count
+	// Extract key
+	// Call s.store.Incr(key)
+	// If error, return protocol.Error
+	// Otherwise, return protocol.Integer with new value
+	if len(args) != 2 { //  GET key (2 args total)
+		return protocol.Error{Message: "ERR wrong number of arguments for 'incr' command"}
+	}
+
+	// Safe type assertion
+	key, ok := args[1].(protocol.BulkString)
+	if !ok {
+		return protocol.Error{Message: "ERR key must be a string"}
+	}
+
+	newVal, err := s.store.Incr(key.Value)
+	if err != nil {
+		return protocol.Error{Message: err.Error()}
+	}
+
+	return protocol.Integer{
+		Value: newVal,
+	}
+}
+
+func (s *Server) handleDecr(args []protocol.RESPValue) protocol.RESPValue {
+	// Check arg count
+	// Extract key
+	// Call s.store.Decr(key)
+	// If error, return protocol.Error
+	// Otherwise, return protocol.Integer with new value
+	if len(args) != 2 { //  GET key (2 args total)
+		return protocol.Error{Message: "ERR wrong number of arguments for 'decr' command"}
+	}
+
+	// Safe type assertion
+	key, ok := args[1].(protocol.BulkString)
+	if !ok {
+		return protocol.Error{Message: "ERR key must be a string"}
+	}
+
+	newVal, err := s.store.Decr(key.Value)
+	if err != nil {
+		return protocol.Error{Message: err.Error()}
+	}
+
+	return protocol.Integer{
+		Value: newVal,
+	}
 }

@@ -3,6 +3,8 @@ package store
 import (
 	"cli-t/internal/shared/logger"
 	"context"
+	"fmt"
+	"strconv"
 	"time"
 )
 
@@ -112,7 +114,6 @@ func (s *InMemoryStore) StartExpiryWorker(ctx context.Context) {
 //	-1 if key exists but has no expiry
 //	>0 seconds until expiry
 func (s *InMemoryStore) GetTTL(key string) int64 {
-	// TODO: Implement this
 	// Hints:
 	// - What lock do you need? (reading only)
 	// - How to check if key exists?
@@ -166,4 +167,97 @@ func (s *InMemoryStore) SetExpiry(key string, seconds int) bool {
 		ExpiresAt: &expiresAt,
 	})
 	return true
+}
+
+func (s *InMemoryStore) Exists(keys ...string) int {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	count := 0
+	for _, key := range keys {
+		_, exists := s.getIfValid(key)
+		if exists {
+			count++
+		}
+	}
+	return count
+}
+
+func (s *InMemoryStore) Delete(keys ...string) int {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	count := 0
+	for _, key := range keys {
+		_, exists := s.getIfValid(key)
+		if exists {
+			delete(s.data, key)
+			count++
+		}
+	}
+	return count
+}
+
+func (s *InMemoryStore) Incr(key string) (int64, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	// Get current value
+	val, exists := s.getIfValid(key)
+
+	var currentNum int64
+	if exists {
+		// Parse as integer
+		// If parse fails, return error
+		num, err := strconv.ParseInt(val.Data, 10, 64)
+		if err != nil {
+			return 0, fmt.Errorf("ERR value is not an integer or out of range")
+		}
+
+		currentNum = num
+	} else {
+		// Doesn't exist, start at 0
+		currentNum = 0
+	}
+
+	// Increment
+	newValue := currentNum + 1
+
+	// Store back as string
+	// Return new value
+	val.Data = strconv.FormatInt(newValue, 10)
+	s.set(key, val)
+	return newValue, nil
+}
+
+func (s *InMemoryStore) Decr(key string) (int64, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	// Get current value
+	val, exists := s.getIfValid(key)
+
+	var currentNum int64
+	if exists {
+		// Parse as integer
+		// If parse fails, return error
+		num, err := strconv.ParseInt(val.Data, 10, 64)
+		if err != nil {
+			return 0, fmt.Errorf("ERR value is not an integer or out of range")
+		}
+
+		currentNum = num
+	} else {
+		// Doesn't exist, start at 0
+		currentNum = 0
+	}
+
+	// Increment
+	newValue := currentNum - 1
+
+	// Store back as string
+	// Return new value
+	val.Data = strconv.FormatInt(newValue, 10)
+	s.set(key, val)
+	return newValue, nil
 }
