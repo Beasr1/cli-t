@@ -1,0 +1,2 @@
+Golang is a light-object-oriented language and supports polymorphism through interfaces only
+Polymorphism in Go = different types implementing the same interface, allowing them to be used interchangeably.

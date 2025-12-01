@@ -7,6 +7,7 @@ import (
 	"cli-t/internal/tools/config"
 	"cli-t/internal/tools/cut"
 	"cli-t/internal/tools/echo"
+	"cli-t/internal/tools/grep"
 	"cli-t/internal/tools/huffman"
 	"cli-t/internal/tools/json"
 	"cli-t/internal/tools/lb"
@@ -40,6 +41,7 @@ func init() {
 		sort.New(),
 		calc.New(),
 		redis.New(),
+		grep.New(),
 	}
 
 	// Register each tool
@@ -75,7 +77,7 @@ func RegisterAll() error {
 		sort.New(),
 		calc.New(),
 		redis.New(),
-		// grep.New(),
+		grep.New(),
 		// cat.New(),
 		// Add more tools here as you create them
 	}

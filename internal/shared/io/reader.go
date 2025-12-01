@@ -9,6 +9,7 @@ import (
 )
 
 // readInput reads from stdin or file, returning path and data
+// reads all the content at once
 func ReadInput(args *command.Args) (path string, data []byte, err error) {
 	if len(args.Positional) == 0 {
 		// Read from stdin
