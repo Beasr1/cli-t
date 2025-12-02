@@ -33,3 +33,20 @@ func WriteOutput(data []byte, inputPath, outputPath string, stdout io.Writer, ex
 }
 
 type Writer io.Writer
+
+func GetOutputWriter(stdout io.Writer, outputPath string) (io.Writer, func(), error) {
+	// No output file specified, use stdout
+	if outputPath == "" {
+		return stdout, func() {}, nil
+	}
+
+	// Create output file
+	outFile, err := os.Create(outputPath)
+	if err != nil {
+		return nil, func() {}, err
+	}
+
+	// Return cleanup function, don't defer here!
+	cleanup := func() { outFile.Close() }
+	return outFile, cleanup, nil
+}

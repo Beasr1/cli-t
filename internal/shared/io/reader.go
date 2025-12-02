@@ -6,7 +6,10 @@ import (
 	"cli-t/internal/shared/logger"
 	"fmt"
 	"io"
+	"os"
 )
+
+type Reader io.Reader
 
 // readInput reads from stdin or file, returning path and data
 // reads all the content at once
@@ -31,4 +34,19 @@ func ReadInput(args *command.Args) (path string, data []byte, err error) {
 	}
 
 	return path, data, nil
+}
+
+func GetInputReader(stdin io.Reader, inputPath string) (io.Reader, func(), error) {
+	if inputPath == "" {
+		return stdin, func() {}, nil // No cleanup needed
+	}
+
+	file, err := os.Open(inputPath)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	// Return cleanup function, don't defer here!
+	cleanup := func() { file.Close() }
+	return file, cleanup, nil
 }

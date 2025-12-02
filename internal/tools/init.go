@@ -14,6 +14,7 @@ import (
 	"cli-t/internal/tools/list"
 	"cli-t/internal/tools/redis"
 	"cli-t/internal/tools/sort"
+	"cli-t/internal/tools/uniq"
 	versioncmd "cli-t/internal/tools/version"
 	"cli-t/internal/tools/wc"
 	"fmt"
@@ -42,6 +43,7 @@ func init() {
 		calc.New(),
 		redis.New(),
 		grep.New(),
+		uniq.New(),
 	}
 
 	// Register each tool
@@ -78,6 +80,7 @@ func RegisterAll() error {
 		calc.New(),
 		redis.New(),
 		grep.New(),
+		uniq.New(),
 		// cat.New(),
 		// Add more tools here as you create them
 	}
