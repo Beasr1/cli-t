@@ -1,6 +1,7 @@
 package server
 
 import (
+	"bufio"
 	"cli-t/internal/shared/logger"
 
 	"context"
@@ -39,11 +40,11 @@ func (s *Server) Start(ctx context.Context) error {
 	}
 	s.listener = listener
 
-	logger.Info("Redis server listening", "addr", addr)
+	logger.Info("Server listening", "addr", addr)
 
 	// Accept connections loop
 	for {
-		_, err := listener.Accept()
+		conn, err := listener.Accept()
 		if err != nil {
 			select {
 			case <-s.shutdown:
@@ -55,7 +56,7 @@ func (s *Server) Start(ctx context.Context) error {
 		}
 
 		// Handle each client in a goroutine
-		// go s.handleClient(conn)
+		go s.handleConnection(conn)
 	}
 }
 
@@ -73,6 +74,7 @@ func (s *Server) Stop(ctx context.Context) error {
 		// Close all active clients
 		s.mu.Lock()
 		for conn := range s.clients {
+			delete(s.clients, conn)
 			conn.Close()
 		}
 		s.mu.Unlock()
@@ -88,4 +90,32 @@ func (s *Server) Stop(ctx context.Context) error {
 		logger.Warn("Shutdown timeout exceeded, forcing close")
 		return ctx.Err()
 	}
+}
+
+func (s *Server) handleConnection(conn net.Conn) {
+	defer func() {
+		// Cleanup code here
+		// This runs when function exits, no matter how
+		s.mu.Lock()
+		delete(s.clients, conn)
+		s.mu.Unlock()
+		conn.Close()
+	}()
+
+	s.mu.Lock()
+	s.clients[conn] = true
+	s.mu.Unlock()
+
+	reader := bufio.NewReader(conn)
+	req, err := ParseRequest(reader)
+	if err != nil {
+		// Send what string to conn
+		// HTTP/1.1 400 Bad Request\r\n\r\nInvalid request\r\n
+		response := "HTTP/1.1 400 Bad Request\r\n\r\nInvalid request\r\n"
+		conn.Write([]byte(response)) // Convert string to []byte
+		return
+	}
+
+	response := fmt.Sprintf("HTTP/1.1 200 OK\r\n\r\nRequested path: %s\r\n", req.Path)
+	conn.Write([]byte(response))
 }
