@@ -20,15 +20,15 @@ func New() command.Command {
 }
 
 func (c *Command) Name() string {
-	return "server"
+	return "webserver"
 }
 
 func (c *Command) Usage() string {
-	return "server --port <port>"
+	return "webserver --port <port>"
 }
 
 func (c *Command) Description() string {
-	return "Start an HTTP server"
+	return "Start an HTTP webserver"
 }
 
 func (c *Command) ValidateArgs(args []string) error {
@@ -42,23 +42,30 @@ func (c *Command) DefineFlags() []command.Flag {
 			Shorthand: "",
 			Type:      "string",
 			Default:   "127.0.0.1",
-			Usage:     "host on which server is running",
+			Usage:     "host on which webserver is running",
 		},
 		{
 			Name:      "port",
 			Shorthand: "p",
 			Type:      "int",
 			Default:   8000,
-			Usage:     "port on which server is running",
+			Usage:     "port on which webserver is running",
+		},
+		{
+			Name:      "docroot",
+			Shorthand: "d",
+			Type:      "string",
+			Default:   "./www", // Relative path
+			Usage:     "Document root directory",
 		},
 	}
 }
 
 func (c *Command) Execute(ctx context.Context, args *command.Args) error {
-	host, port := c.parseFlags(args.Flags)
+	host, port, docRoot := c.parseFlags(args.Flags)
 
 	// Create server
-	server := server.New(host, port)
+	server := server.New(host, port, docRoot)
 
 	// Start server in goroutine
 	go func() {
@@ -88,13 +95,16 @@ func (c *Command) Execute(ctx context.Context, args *command.Args) error {
 	return nil
 }
 
-func (c *Command) parseFlags(flags map[string]interface{}) (string, int) {
+func (c *Command) parseFlags(flags map[string]interface{}) (string, int, string) {
 	host, _ := flags["host"].(string)
 	port, _ := flags["port"].(int)
+	docRoot, _ := flags["docroot"].(string)
 
 	logger.Debug("Flags processing",
-		"port", port, "backends",
+		"port", port,
+		"host", host,
+		"docRoot", docRoot,
 	)
 
-	return host, port
+	return host, port, docRoot
 }

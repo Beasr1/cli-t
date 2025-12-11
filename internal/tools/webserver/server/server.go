@@ -14,19 +14,23 @@ type Server struct {
 	host string
 	port int
 
+	docRoot string
+
 	listener net.Listener      // TCP listener
 	clients  map[net.Conn]bool // Active connections
 	mu       sync.Mutex        // Protect clients map
 	shutdown chan struct{}     // Signal to stop
 }
 
-func New(host string, port int) *Server {
+func New(host string, port int, docRoot string) *Server {
 	return &Server{
 		host: host,
 		port: port,
 
 		clients:  make(map[net.Conn]bool),
 		shutdown: make(chan struct{}),
+
+		docRoot: docRoot,
 	}
 }
 
@@ -106,6 +110,11 @@ func (s *Server) handleConnection(conn net.Conn) {
 	s.clients[conn] = true
 	s.mu.Unlock()
 
+	// TEMPORARY: See concurrency in action
+	// logger.Info("Connection started", "addr", conn.RemoteAddr())
+	// time.Sleep(5 * time.Second) // 5 second delay
+	// logger.Info("Connection processing", "addr", conn.RemoteAddr())
+
 	reader := bufio.NewReader(conn)
 	req, err := ParseRequest(reader)
 	if err != nil {
@@ -116,6 +125,27 @@ func (s *Server) handleConnection(conn net.Conn) {
 		return
 	}
 
-	response := fmt.Sprintf("HTTP/1.1 200 OK\r\n\r\nRequested path: %s\r\n", req.Path)
-	conn.Write([]byte(response))
+	// Serve file
+	content, statusCode, err := s.serveFile(req.Path)
+	if err != nil {
+		// handled below
+		logger.Error("error", "err", err)
+	}
+
+	switch statusCode {
+	case 200:
+		// Send header then raw file content
+		header := "HTTP/1.1 200 OK\r\n\r\n"
+		conn.Write([]byte(header))
+		conn.Write(content)
+
+	case 404:
+		response := "HTTP/1.1 404 Not Found\r\n\r\nFile not found\r\n"
+		conn.Write([]byte(response))
+
+	case 500:
+		response := "HTTP/1.1 500 Internal Server Error\r\n\r\nServer error\r\n"
+		conn.Write([]byte(response))
+	}
+
 }
