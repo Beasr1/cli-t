@@ -4,7 +4,7 @@ package webserver
 import (
 	"cli-t/internal/command"
 	"cli-t/internal/shared/logger"
-	"cli-t/internal/tools/webserver/server"
+	"cli-t/internal/shared/server"
 
 	"context"
 	"os"
