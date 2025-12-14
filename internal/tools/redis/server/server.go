@@ -2,8 +2,9 @@ package server
 
 import (
 	"cli-t/internal/shared/logger"
+	inmemory "cli-t/internal/shared/store/inmemory"
 	"cli-t/internal/tools/redis/protocol"
-	"cli-t/internal/tools/redis/store"
+
 	"context"
 	"fmt"
 	"io"
@@ -14,7 +15,7 @@ import (
 type Server struct {
 	host  string
 	port  int
-	store store.Store
+	store inmemory.Store
 
 	listener net.Listener      // TCP listener
 	clients  map[net.Conn]bool // Active connections
@@ -22,7 +23,7 @@ type Server struct {
 	shutdown chan struct{}     // Signal to stop
 }
 
-func New(host string, port int, store store.Store) *Server {
+func New(host string, port int, store inmemory.Store) *Server {
 	return &Server{
 		host:     host,
 		port:     port,

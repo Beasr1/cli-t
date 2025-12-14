@@ -2,8 +2,9 @@ package server
 
 import (
 	"cli-t/internal/shared/logger"
+	inmemory "cli-t/internal/shared/store/inmemory"
 	"cli-t/internal/tools/redis/protocol"
-	"cli-t/internal/tools/redis/store"
+
 	"strconv"
 	"strings"
 	"time"
@@ -207,10 +208,10 @@ func (s *Server) handleSet(args []protocol.RESPValue) protocol.RESPValue {
 		}
 	}
 
-	s.store.Set(key.Value, store.StoreValue{
+	s.store.Set(key.Value, inmemory.StoreValue{
 		Data:      value.Value,
 		ExpiresAt: expiresAt,
-		Type:      store.TypeString,
+		Type:      inmemory.TypeString,
 	})
 
 	return protocol.SimpleString{Value: "OK"}

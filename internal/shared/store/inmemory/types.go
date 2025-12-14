@@ -1,4 +1,4 @@
-package store
+package inmemory
 
 import (
 	"context"
@@ -38,7 +38,7 @@ type Store interface {
 	// We'll add more methods later (Delete, Exists, etc.)
 }
 
-// InMemoryStore is a thread-safe in-memory key-value store
+// InMemoryStore is a thread-safe inmemory key-value store
 type InMemoryStore struct {
 	data map[string]StoreValue
 	mu   sync.RWMutex // ← Use RWMutex, not Mutex!

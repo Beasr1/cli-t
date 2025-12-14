@@ -1,4 +1,4 @@
-package store
+package inmemory
 
 import (
 	"cli-t/internal/shared/logger"
@@ -8,7 +8,7 @@ import (
 	"time"
 )
 
-// New creates a new in-memory store
+// New creates a new inmemory store
 func New() Store {
 	// Later you might add:
 	// - Load data from disk

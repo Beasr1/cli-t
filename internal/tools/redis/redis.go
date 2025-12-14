@@ -3,8 +3,9 @@ package redis
 import (
 	"cli-t/internal/command"
 	"cli-t/internal/shared/logger"
+	inmemory "cli-t/internal/shared/store/inmemory"
 	"cli-t/internal/tools/redis/server"
-	"cli-t/internal/tools/redis/store"
+
 	"context"
 	"os"
 	"os/signal"
@@ -27,7 +28,7 @@ func (c *Command) Usage() string {
 }
 
 func (c *Command) Description() string {
-	return "Start a Redis-compatible in-memory key-value store server"
+	return "Start a Redis-compatible inmemory key-value store server"
 }
 
 func (c *Command) ValidateArgs(args []string) error {
@@ -61,7 +62,7 @@ Redis Serialization Protocol (RESP)
 func (c *Command) Execute(ctx context.Context, args *command.Args) error {
 	host, port := c.parseFlags(args.Flags)
 
-	store := store.New()
+	store := inmemory.New()
 	server := server.New(host, port, store)
 
 	// Start server in goroutine
